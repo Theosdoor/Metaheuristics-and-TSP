@@ -292,7 +292,7 @@ my_last_name = "Farrell"
 ############
 ############ END OF SECTOR 7 (IGNORE THIS COMMENT)
 
-algorithm_code = "XX"
+algorithm_code = "US"
 
 ############ START OF SECTOR 8 (IGNORE THIS COMMENT)
 ############

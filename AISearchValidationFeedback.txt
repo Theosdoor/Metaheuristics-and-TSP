@@ -1,0 +1,81 @@
+Feedback for user-ID nchw73 at Feb  1 15:07:16
+
+Throughout this validation, as many error messages as possible are returned in order to help you understand what might have gone wrong. However, note that sometimes a single error might lead to early termination of the validation process so that fixing this error results in more, as yet unseen, errors. So, the list of error messages might not be exhaustive but it's the best I can do!
+
+The first part of this feedback is validation of the program files that you submitted, in terms of the key information they need to contain. At this stage, the programs are not executed; that will follow later. Please note that for any program cluster, if any of the following are true then the program cluster is INVALID and neither it nor the tours it produces will secure any marks:
+ - the basic program does not exist
+ - the basic program exists but its user-name mis-matches the definitive user-name
+ - the basic program exists but its algorithm code is illegal
+ - the basic program exists but it imports an illegal module
+ - the enhanced program exists but its user-name mismatches the definitive user-name
+ - the enhanced program exists but its algorithm code mis-matches with that of the basic program
+ - the enhanced program exists but it imports an illegal module.
+Also, if you have two valid program clusters but they have the same algorithm code then both clusters are invalid. (Of course, invalidity can be avoided if you check your programs using this program prior to submission!)
+
+By the way, if you don't bother to validate prior to submission and so don't include the validation feedback in your submission then I will do absolutely nothing to fix any errors in your submission, no matter how trivial they are.
+
+#####  Program submission
+#####   * program cluster AlgA:
+#####      - AlgAbasic.py: successful validation (uninformed search, tariff 5)
+#####      - AlgAenhanced.py: there were validation errors (algorithm code ?)
+#####         *** error: the program file does not exist
+#####   * program cluster AlgB:
+#####      - AlgBbasic.py: there were validation errors (algorithm code ?)
+#####         *** error: the program file does not exist
+#####      - AlgBenhanced.py: there were validation errors (algorithm code ?)
+#####         *** error: the program file does not exist
+#####     *** MAJOR ERROR: THIS PROGRAM CLUSTER IS INVALID!
+
+The next part of this feedback is validation of the tour files that you submitted. Each has been validated and the outcome is described below. If any tour has an associated error message then it is deemed to be invalid and it will secure no marks. Remember: as stated above, any tours arising from an invalid program cluster will not secure any marks (irrespective of whether they are actually legal tours or not). The tour lengths of successfully validated tours given below go to form your tour-quality mark.
+
+#####  Tour file submission
+#####   * program cluster AlgA:
+#####      - AlgA_AISearchfile012.txt: there were validation errors:
+#####        *** error: the tour file does not exist
+#####      - AlgA_AISearchfile017.txt: there were validation errors:
+#####        *** error: the tour file does not exist
+#####      - AlgA_AISearchfile021.txt: there were validation errors:
+#####        *** error: the tour file does not exist
+#####      - AlgA_AISearchfile026.txt: there were validation errors:
+#####        *** error: the tour file does not exist
+#####      - AlgA_AISearchfile042.txt: there were validation errors:
+#####        *** error: the tour file does not exist
+#####      - AlgA_AISearchfile048.txt: there were validation errors:
+#####        *** error: the tour file does not exist
+#####      - AlgA_AISearchfile058.txt: there were validation errors:
+#####        *** error: the tour file does not exist
+#####      - AlgA_AISearchfile175.txt: there were validation errors:
+#####        *** error: the tour file does not exist
+#####      - AlgA_AISearchfile180.txt: there were validation errors:
+#####        *** error: the tour file does not exist
+#####      - AlgA_AISearchfile535.txt: there were validation errors:
+#####        *** error: the tour file does not exist
+#####   * program cluster AlgB:
+#####      - AlgB_AISearchfile012.txt: there were validation errors:
+#####        *** error: the tour file does not exist
+#####      - AlgB_AISearchfile017.txt: there were validation errors:
+#####        *** error: the tour file does not exist
+#####      - AlgB_AISearchfile021.txt: there were validation errors:
+#####        *** error: the tour file does not exist
+#####      - AlgB_AISearchfile026.txt: there were validation errors:
+#####        *** error: the tour file does not exist
+#####      - AlgB_AISearchfile042.txt: there were validation errors:
+#####        *** error: the tour file does not exist
+#####      - AlgB_AISearchfile048.txt: there were validation errors:
+#####        *** error: the tour file does not exist
+#####      - AlgB_AISearchfile058.txt: there were validation errors:
+#####        *** error: the tour file does not exist
+#####      - AlgB_AISearchfile175.txt: there were validation errors:
+#####        *** error: the tour file does not exist
+#####      - AlgB_AISearchfile180.txt: there were validation errors:
+#####        *** error: the tour file does not exist
+#####      - AlgB_AISearchfile535.txt: there were validation errors:
+#####        *** error: the tour file does not exist
+
+The next part of this feedback states whether the proforma and the validation feedback were submitted.
+
+#####  Additional items submission
+#####   * AISearchProforma.pdf: not submitted
+#####   * AISearchValidationFeedback.txt: not submitted
+
+Of course, the validation feedback file might be flagged as 'not submitted' as it should be this file!
