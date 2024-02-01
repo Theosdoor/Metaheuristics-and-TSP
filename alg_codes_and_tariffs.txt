@@ -1,0 +1,13 @@
+HC, hill climbing search, 4,
+BG, basic greedy search, 4,
+US, uninformed search, 5,
+SA, simulated annealing, 5,
+BF, brute-force search, 6,
+ID, iterative deepening search, 6,
+BH, greedy best-first search, 6,
+GA, genetic algorithm, 6,
+DE, differential evolution, 6,
+AS, A-star search, 7,
+IA, iterative deepening A-star search, 8,
+AC, ant colony optimization, 9,
+PS, particle swarm optimization, 10
