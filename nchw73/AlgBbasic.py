@@ -292,7 +292,7 @@ my_last_name = "Farrell"
 ############
 ############ END OF SECTOR 7 (IGNORE THIS COMMENT)
 
-algorithm_code = "GA"
+algorithm_code = "AC"
 
 ############ START OF SECTOR 8 (IGNORE THIS COMMENT)
 ############
@@ -353,13 +353,12 @@ added_note = ""
 ############
 ############ END OF SECTOR 9 (IGNORE THIS COMMENT)
 
-# Genetic
+# Ant Colony Optimisation
 
-# define relevant parameters
 max_it = 1000 # max number of generations
-pop_size = 100 # |P|
+num_ants = 100 # |P|
 
-# define function for getting tour length
+# define fitness as length of tour ==> want to minimise!
 def get_tour_length(tour):
     length = 0
 
@@ -373,218 +372,14 @@ def get_tour_length(tour):
 
     return length
 
+# initialise pheromone matrix
+pheromone = [[1 for i in range(num_cities)] for j in range(num_cities)]
 
-# define fitness as length of tour ==> want to minimise!
-fitness_thresh = 0.1 # threshold for fitness
+# initialise best tour and length
+best_tour = []
+best_tour_length = float('inf')
 
-def get_fitness(Z, strategy = get_tour_length):
-    return strategy(Z)
-
-
-# define crossover & helper fn
-def fix_invalid_child(to_fix, ref, split):
-    '''
-    Makes sure that 'to_fix' is a valid tour by replacing
-    any repeated cities in 'to_fix' with cities not in 'ref'
-
-    Note: modifies 'to_fix' inplace
-    '''
-    # iterate over first suffix
-    for i in range(split, num_cities):
-        # check for repeats from prefix
-        repeats = []
-        if to_fix[i] in to_fix[:split]:
-            repeats.append(i) # store *position* of repeated city
-
-    # look in Z2 for cities not in Z1
-    for i in range(num_cities):
-        # if no more repeats in Z1 to replace, break loop
-        if len(repeats) == 0:
-            break
-
-        # set repeated = one not in Z1
-        if ref[i] not in to_fix:
-            j = repeats.pop(0)
-            to_fix[j] = ref[i]
-
-    return to_fix
-
-def crossover(X, Y):
-    # pick split point at random
-    split = random.randint(0, num_cities - 1)
-
-    # split X, Y
-    X_prefix, X_suffix = X[:split], X[split:]
-    Y_prefix, Y_suffix = Y[:split], Y[split:]
-
-    # create 2 children
-    Z1 = X_prefix + Y_suffix
-    Z2 = Y_prefix + X_suffix
-
-    # ensure Z1, Z2 are valid tours
-    fix_invalid_child(Z1, Z2, split)
-    fix_invalid_child(Z2, Z1, split)
-
-    # return fittest child
-    if get_fitness(Z1) >= get_fitness(Z2):
-        return Z1
-    else:
-        return Z2
-
-
-# define mutation and probability
-p_mutation = 0.1 # small and fixed probability of mutation
-
-def mutate(Z, p):
-    '''
-    Mutate Z with small fixed probability p
-    
-    Mutation strategy: randomly swap two elements of Z
-
-    Note: modifies Z inplace
-    '''
-    k = random.random() # pick a random probability (i.e. int between 0 and 1)
-    if k <= p: # if less than p...
-        # pick two random indices i, j
-        i = random.randint(0, num_cities - 1)
-        j = random.randint(0, num_cities - 1)
-
-        # swap cities
-        Z[i], Z[j] = Z[j], Z[i]
-
-
-# randomly generate initial population
-P = []
-for i in range(pop_size):
-    individual = list(range(num_cities)) # init tour: [0, 1, 2, ..., num_cities - 1]
-    random.shuffle(individual) # shuffle cities visited in each tour
-    P.append(individual) # add tour to population
-
-# repeat until certain number of iterations have been done
-# or break if some individual is fit enough
-best = min([get_fitness(i) for i in P]) # init best fitness
-for i in range(max_it):
-    new_P = []
-
-    for i in range(pop_size):
-        # randomly choose two parents from P with 
-        # probability proportional to fitness     
-        #### NOTE do this by creating list of fitnesses of each individual, then turn into proportion list and use as prob w/ random.RandomChoice
-        #### then dfind min s.t. lower fitness ==> higher chance of getting picked
-        X = P[random.randint(0, pop_size - 1)]
-        Y = P[random.randint(0, pop_size - 1)]
-
-        # check we haven't picked same individual for both X and Y
-        # by continually shuffling Y until it's different from X
-        while X == Y:
-            Y = random.randint(0, pop_size - 1)
-
-        # crossover X and Y to produce Z
-        Z = crossover(X, Y)
-
-        # mutate Z with small fixed probablity
-        mutate(Z, p_mutation)
-        
-        new_P.append(Z)
-    P = new_P
-        
-
-    #######COPILOT#######
-    # # evaluate fitness of each individual
-    # fitness = []
-    # for j in range(pop_size):
-    #     tour = P[j]
-    #     length = 0
-    #     for k in range(num_cities - 1):
-    #         length = length + dist_matrix[tour[k]][tour[k + 1]] # calculate length of tour
-    #     length = length + dist_matrix[tour[num_cities - 1]][tour[0]] # add length of last leg of tour
-    #     fitness.append(length)
-    # # select parents
-    # parents = []
-    # for j in range(2):
-    #     index = fitness.index(min(fitness))
-    #     parents.append(P[index])
-    #     fitness.pop(index)
-    #     P.pop(index)
-    # # crossover
-    # children = []
-    # for j in range(2):
-    #     child = []
-    #     for k in range(num_cities):
-    #         child.append(-1)
-    #     start = random.randint(0, num_cities - 1)
-    #     end = random.randint(0, num_cities - 1)
-    #     if start > end:
-    #         start, end = end, start
-    #     for k in range(start, end + 1):
-    #         child[k] = parents[j][k]
-    #     for k in range(num_cities):
-    #         if child[k] == -1:
-    #             for l in range(num_cities):
-    #                 if not parents[j][l] in child:
-    #                     child[k] = parents[j][l]
-    #                     break
-    #     children.append(child)
-    # # mutate
-    # for j in range(2):
-    #     if random.random() < 0.1:
-    #         index1 = random.randint(0, num_cities - 1)
-    #         index2 = random.randint(0, num_cities - 1)
-    #         children[j][index1], children[j][index2] = children[j][index2], children[j][index1]
-    # # select survivors
-    # for j in range(2):
-    #     P.append(children[j])
-    # # select new population
-    # for j in range(pop_size):
-    #     index = random.randint(0, len(P) - 1)
-    #     new_P.append(P[index])
-    #     P.pop(index)
-    # P = new_P
-
-# set tour = fittest individual, and get length
-# tour = P[0]
-tour = Z
-tour_length = get_tour_length(tour)
-
-#######COPILOT#######
-
-
-
-
-
-
-
-
-
-# BFS
-
-# newid = 0 # init node identifier
-
-# tour = dist_matrix[newid]
-
-# initial_state = tour # each state is partial tour
-
-# state = [initial_state] # associate init state w root
-# parent = [None] # root has no parent / action
-# action = [None]
-# path_cost = [0] # 0 for root
-# depth = [0]
-
-# fringe = [(newid, state[0], parent[0], action[0], path_cost[0], depth[0])] # FIFO queue
-
-# # check root != goal node
-
-# # else
-# while len(fringe) > 0:
-#     current = fringe.pop()
-    
-
-# print(dist_matrix)
-
-
-
-
-
+# main loop
 
 
 ############ START OF SECTOR 10 (IGNORE THIS COMMENT)
