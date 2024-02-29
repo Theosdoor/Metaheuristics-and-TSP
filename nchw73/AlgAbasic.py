@@ -550,43 +550,6 @@ tour_length = get_tour_length(tour)
 
 
 
-
-
-
-
-
-
-# BFS
-
-# newid = 0 # init node identifier
-
-# tour = dist_matrix[newid]
-
-# initial_state = tour # each state is partial tour
-
-# state = [initial_state] # associate init state w root
-# parent = [None] # root has no parent / action
-# action = [None]
-# path_cost = [0] # 0 for root
-# depth = [0]
-
-# fringe = [(newid, state[0], parent[0], action[0], path_cost[0], depth[0])] # FIFO queue
-
-# # check root != goal node
-
-# # else
-# while len(fringe) > 0:
-#     current = fringe.pop()
-    
-
-# print(dist_matrix)
-
-
-
-
-
-
-
 ############ START OF SECTOR 10 (IGNORE THIS COMMENT)
 ############
 ############ YOUR CODE SHOULD NOW BE COMPLETE AND WHEN EXECUTION OF THIS PROGRAM 'skeleton.py'

@@ -355,10 +355,19 @@ added_note = ""
 
 # Ant Colony Optimisation
 
-max_it = 1000 # max number of generations
-num_ants = 100 # |P|
+# define parameters
+max_it = 1000 # max number of iterations
 
-# define fitness as length of tour ==> want to minimise!
+alpha = 1 # pheromone influence
+beta = 3 # edge-distance influence
+rho = 0.5 # pheromone evaporation rate
+num_ants = num_cities # N
+
+# function to get heurisisic desirability
+def eta(i, j):
+    return 1 / dist_matrix[i][j] # heuristic desirability = 1 / edge distance
+
+# function to get tour length & add distance back to start city
 def get_tour_length(tour):
     length = 0
 
@@ -372,14 +381,100 @@ def get_tour_length(tour):
 
     return length
 
-# initialise pheromone matrix
-pheromone = [[1 for i in range(num_cities)] for j in range(num_cities)]
+# get nearest neighbour tour & length (COPILOT)
+def nearest_neighbours():
+    # start at city 0
+    tour = [0]
 
-# initialise best tour and length
-best_tour = []
-best_tour_length = float('inf')
+    # while tour not complete
+    while len(tour) < num_cities:
+        current_city = tour[-1]
+        # get distances from current city to all other cities
+        distances = dist_matrix[current_city]
 
-# main loop
+        # remove distances to cities already in tour
+        for city in tour:
+            distances[city] = float('inf')
+
+        # find nearest city
+        nearest_city = distances.index(min(distances))
+
+        # add nearest city to tour
+        tour.append(nearest_city)
+        
+    return tour
+
+nn_tour = nearest_neighbours()
+nn_tour_length = get_tour_length(nn_tour)
+
+# init pheromone matrix tau, with initial deposit tau_0 on each edge
+tau_0 = num_ants / nn_tour_length # heuristic = N / Lnn
+
+tau = [[tau_0 for i in range(num_cities)] for j in range(num_cities)] # COPILOT
+
+# init best tour & length
+best_tour = nn_tour
+best_tour_length = nn_tour_length
+
+# randomly place ants on cities
+ant_positions = [random.randint(0, num_cities-1) for i in range(num_ants)]
+
+# main loop for max_it iterations, starting at t := 0
+for t in range(max_it):
+    ant_tours = []
+
+    # for each ant
+    for k in range(num_ants):
+        # init tour with current city
+        ant_k_tour = [ant_positions[k]]
+
+        # init tabu list F_k for forbidden / already visited cities
+        tabu_list = [ant_positions[k]]
+
+        # stochastically build a trail
+        while len(ant_k_tour) < num_cities:
+            # get current city
+            current_city = ant_k_tour[-1]
+
+            # get possible next cities visitable from current city
+            next_cities = [c for c in range(num_cities) if c not in tabu_list]
+
+            # get probabilities for each possible next city
+            probabilities = [0 for i in range(num_cities)]
+            for city in next_cities:
+                numerator = (tau[current_city][city] ** alpha) * (eta(current_city, city) ** beta)
+                denominator = sum([(tau[current_city][m] ** alpha) * (eta(current_city, m) ** beta) for m in next_cities])
+                probabilities[city] = numerator / denominator
+            
+            # choose next city from probabilities
+            next_city = random.choice([k for k in range(k)], p=probabilities)
+            ant_k_tour.append(next_city)
+            tabu_list.append(next_city)
+
+        # add tour to ant_tours
+        ant_tours.append(ant_k_tour)
+
+    # eval cost of each ant tour
+    ant_tour_lengths = [get_tour_length(tour) for tour in ant_tours]
+
+    # update best tour if improved tour found COPILOT
+    if min(ant_tour_lengths) < best_tour_length:
+        best_tour_length = min(ant_tour_lengths)
+        best_tour = ant_tours[ant_tour_lengths.index(min(ant_tour_lengths))]
+    
+    # deposit / evaporate pheromone on edges
+    for i in range(num_cities):
+        for j in range(num_cities):
+            tau[i][j] *= (1-rho) # evaporate
+
+    # deposit on edge if in ant tour
+    for tour in ant_tours:
+        for i in range(num_cities - 1):
+            tau[tour[i]][tour[i+1]] += 1 / get_tour_length(tour)
+
+# output
+tour = best_tour
+tour_length = best_tour_length
 
 
 ############ START OF SECTOR 10 (IGNORE THIS COMMENT)
