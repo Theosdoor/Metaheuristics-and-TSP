@@ -382,30 +382,12 @@ def get_tour_length(tour):
 def crossover(X, Y):
     # split X, Y at random point
     split = random.randint(0, num_cities - 1)
-    X_prefix, X_suffix = X[:split], X[split:]
-    Y_prefix, Y_suffix = Y[:split], Y[split:]
+    X_prefix = X[:split]
+    Y_prefix = Y[:split]
 
     # create 2 children that are valid tours
     Z1 = X_prefix + [city for city in Y if city not in X_prefix]
     Z2 = Y_prefix + [city for city in X if city not in Y_prefix]
-
-    # Z1 = X_prefix + Y_suffix
-    # Z2 = Y_prefix + X_suffix
-
-    # # if X_prefix and Y_suffix are disjoint ==> no repeat cities in Z1, Z2
-    # # since Y_prefix and X_suffix must also be disjoint
-    # if len(set(X_prefix) & set(Y_suffix)) > 0: # Z1 has repeats (so Z2 does too)
-    #     # make Z1 a valid tour by replacing repeated cities
-    #     replace_with = [city for city in Y_prefix if city not in X_prefix]
-    #     for i in range(len(Y_suffix)): # work through Z1 suffix
-    #         if Y_suffix[i] in X_prefix: # if repeated city
-    #             Z1[split + i] = replace_with.pop(0)
-            
-    #     # make Z2 a valid tour by replacing repeated cities
-    #     replace_with = [city for city in X_prefix if city not in Y_prefix]
-    #     for i in range(len(X_suffix)): # work through Z2 suffix
-    #         if X_suffix[i] in Y_prefix: # if repeated city
-    #             Z2[split + i] = replace_with.pop(0)
 
     # return fittest child
     if get_tour_length(Z1) >= get_tour_length(Z2):

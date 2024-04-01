@@ -157,7 +157,7 @@ def read_in_algorithm_codes_and_tariffs(alg_codes_file):
 ############
 ############ END OF SECTOR 0 (IGNORE THIS COMMENT)
 
-input_file = "AISearchfile175.txt"
+input_file = "AISearchfile012.txt"
 
 ############ START OF SECTOR 1 (IGNORE THIS COMMENT)
 ############
@@ -292,7 +292,7 @@ my_last_name = "Farrell"
 ############
 ############ END OF SECTOR 7 (IGNORE THIS COMMENT)
 
-algorithm_code = "GA"
+algorithm_code = "AS"
 
 ############ START OF SECTOR 8 (IGNORE THIS COMMENT)
 ############
@@ -353,18 +353,9 @@ added_note = ""
 ############
 ############ END OF SECTOR 9 (IGNORE THIS COMMENT)
 
-# Genetic
-timed = True
-time_limit = 59.6 # seconds
-
-# define relevant parameters
-max_it = 1000 # max number of generations
-pop_size = 100 # |P|
-p_mutation = 0.3 # small and fixed probability of mutation
-# TODO param to stop loop when good enough indiv found
+# A* search to get optimal route
 
 # define function for getting tour length
-# & use as fitness function ==> minimise fitness fn
 def get_tour_length(tour):
     length = 0
 
@@ -378,113 +369,62 @@ def get_tour_length(tour):
 
     return length
 
-# define crossover
-def crossover(X, Y):
-    # split X, Y at random point
-    split = random.randint(0, num_cities - 1)
-    X_prefix, X_suffix = X[:split], X[split:]
-    Y_prefix, Y_suffix = Y[:split], Y[split:]
+# define function for getting heuristic value
+def get_heuristic(tour):
+    # get minimum distance from each city to any other city
+    min_distances = []
+    for i in range(num_cities):
+        min_distance = float('inf')
+        for j in range(num_cities):
+            if i != j and dist_matrix[i][j] < min_distance:
+                min_distance = dist_matrix[i][j]
+        min_distances.append(min_distance)
 
-    # create 2 children that are valid tours
-    Z1 = X_prefix + [city for city in Y if city not in X_prefix]
-    Z2 = Y_prefix + [city for city in X if city not in Y_prefix]
+    # get sum of minimum distances for each city in tour
+    heuristic = 0
+    for city in tour:
+        heuristic += min_distances[city]
 
-    # Z1 = X_prefix + Y_suffix
-    # Z2 = Y_prefix + X_suffix
+    return heuristic
 
-    # # if X_prefix and Y_suffix are disjoint ==> no repeat cities in Z1, Z2
-    # # since Y_prefix and X_suffix must also be disjoint
-    # if len(set(X_prefix) & set(Y_suffix)) > 0: # Z1 has repeats (so Z2 does too)
-    #     # make Z1 a valid tour by replacing repeated cities
-    #     replace_with = [city for city in Y_prefix if city not in X_prefix]
-    #     for i in range(len(Y_suffix)): # work through Z1 suffix
-    #         if Y_suffix[i] in X_prefix: # if repeated city
-    #             Z1[split + i] = replace_with.pop(0)
-            
-    #     # make Z2 a valid tour by replacing repeated cities
-    #     replace_with = [city for city in X_prefix if city not in Y_prefix]
-    #     for i in range(len(X_suffix)): # work through Z2 suffix
-    #         if X_suffix[i] in Y_prefix: # if repeated city
-    #             Z2[split + i] = replace_with.pop(0)
+# define function for getting next city to visit
+def get_next_city(tour, visited):
+    # get city with lowest f value
+    min_f = float('inf')
+    next_city = -1
+    for i in range(num_cities):
+        if i not in visited:
+            # calculate f value
+            f = get_tour_length(tour + [i]) + get_heuristic(tour + [i])
+            if f < min_f:
+                min_f = f
+                next_city = i
 
-    # return fittest child
-    if get_tour_length(Z1) >= get_tour_length(Z2):
-        return Z1
-    else:
-        return Z2
+    return next_city
 
-# define mutation
-def mutate(Z):
-    '''
-    Mutation strategy: randomly swap two elements of Z
+# define function for A* search
+def a_star_search():
+    # start with empty tour and visited set
+    tour = []
+    visited = set()
 
-    Note: modifies Z inplace
-    '''
-    # pick two random indices i, j
-    i = random.randint(0, num_cities - 1)
-    j = random.randint(0, num_cities - 1)
+    # get first city to visit
+    next_city = get_next_city(tour, visited)
+    tour.append(next_city)
+    visited.add(next_city)
 
-    # swap cities
-    Z[i], Z[j] = Z[j], Z[i]
+    # visit cities until all have been visited
+    while len(tour) < num_cities:
+        next_city = get_next_city(tour, visited)
+        tour.append(next_city)
+        visited.add(next_city)
 
-# randomly generate initial population
-P = []
-for i in range(pop_size):
-    individual = list(range(num_cities)) # init tour: [0, 1, 2, ..., num_cities - 1]
-    random.shuffle(individual) # shuffle cities visited in each tour
-    P.append(individual) # add tour to population
+    return tour
 
-# init fitnesses and best individual
-fitnesses = [get_tour_length(individual) for individual in P]
-best_fitness = min(fitnesses)
-best_tour = P[fitnesses.index(best_fitness)]
-
-# MAIN LOOP - repeat until one of the following conditions hold:
-# certain number of iterations have been done
-# some individual is fit enough
-# time limit reached
-for it in range(max_it):
-    new_P = []
-
-    # create roulette wheel for selecting parents in P
-    # TODO look at alternatives slide 13
-    F = sum(fitnesses) # total fitness
-    probs = [f/F for f in fitnesses] # probability of selection proportional to fitness
-
-    for i in range(pop_size):
-        # randomly choose two parents from P with 
-        # probability proportional to fitness
-        X = random.choices(P, weights = probs)[0]
-        Y = random.choices(P, weights = probs)[0]
-
-        # crossover X and Y to produce Z
-        Z = crossover(X, Y)
-
-        # with small fixed probablity mutate Z
-        k = random.random() # pick a random probability (i.e. int between 0 and 1)
-        if k < p_mutation: 
-          mutate(Z)
-        
-        new_P.append(Z)
-
-    # update P & fitnesses
-    P = new_P
-    fitnesses = [get_tour_length(individual) for individual in P]
-
-    new_best_fitness = min(fitnesses)
-    new_best_tour = P[fitnesses.index(new_best_fitness)]
-    if new_best_fitness <= best_fitness:
-        best_tour = new_best_tour # keep best individual in memory
-
-    # TODO break if Z is fit enough
-    
-    # break if time limit reached
-    if timed and (time.time() - start_time > time_limit):
-        break
-
-# return best tour (fittest individual) and its length 
-tour = best_tour
+# run A* search
+tour = a_star_search()
 tour_length = get_tour_length(tour)
+
 
 ############ START OF SECTOR 10 (IGNORE THIS COMMENT)
 ############

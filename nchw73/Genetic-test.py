@@ -355,16 +355,14 @@ added_note = ""
 
 # Genetic
 timed = True
-time_limit = 59.6 # seconds
+time_limit = 59 # seconds
 
 # define relevant parameters
 max_it = 1000 # max number of generations
 pop_size = 100 # |P|
-p_mutation = 0.3 # small and fixed probability of mutation
-# TODO param to stop loop when good enough indiv found
+p_mutation = 0.1 # small and fixed probability of mutation
 
 # define function for getting tour length
-# & use as fitness function ==> minimise fitness fn
 def get_tour_length(tour):
     length = 0
 
@@ -378,55 +376,6 @@ def get_tour_length(tour):
 
     return length
 
-# define crossover
-def crossover(X, Y):
-    # split X, Y at random point
-    split = random.randint(0, num_cities - 1)
-    X_prefix, X_suffix = X[:split], X[split:]
-    Y_prefix, Y_suffix = Y[:split], Y[split:]
-
-    # create 2 children that are valid tours
-    Z1 = X_prefix + [city for city in Y if city not in X_prefix]
-    Z2 = Y_prefix + [city for city in X if city not in Y_prefix]
-
-    # Z1 = X_prefix + Y_suffix
-    # Z2 = Y_prefix + X_suffix
-
-    # # if X_prefix and Y_suffix are disjoint ==> no repeat cities in Z1, Z2
-    # # since Y_prefix and X_suffix must also be disjoint
-    # if len(set(X_prefix) & set(Y_suffix)) > 0: # Z1 has repeats (so Z2 does too)
-    #     # make Z1 a valid tour by replacing repeated cities
-    #     replace_with = [city for city in Y_prefix if city not in X_prefix]
-    #     for i in range(len(Y_suffix)): # work through Z1 suffix
-    #         if Y_suffix[i] in X_prefix: # if repeated city
-    #             Z1[split + i] = replace_with.pop(0)
-            
-    #     # make Z2 a valid tour by replacing repeated cities
-    #     replace_with = [city for city in X_prefix if city not in Y_prefix]
-    #     for i in range(len(X_suffix)): # work through Z2 suffix
-    #         if X_suffix[i] in Y_prefix: # if repeated city
-    #             Z2[split + i] = replace_with.pop(0)
-
-    # return fittest child
-    if get_tour_length(Z1) >= get_tour_length(Z2):
-        return Z1
-    else:
-        return Z2
-
-# define mutation
-def mutate(Z):
-    '''
-    Mutation strategy: randomly swap two elements of Z
-
-    Note: modifies Z inplace
-    '''
-    # pick two random indices i, j
-    i = random.randint(0, num_cities - 1)
-    j = random.randint(0, num_cities - 1)
-
-    # swap cities
-    Z[i], Z[j] = Z[j], Z[i]
-
 # randomly generate initial population
 P = []
 for i in range(pop_size):
@@ -434,57 +383,60 @@ for i in range(pop_size):
     random.shuffle(individual) # shuffle cities visited in each tour
     P.append(individual) # add tour to population
 
-# init fitnesses and best individual
-fitnesses = [get_tour_length(individual) for individual in P]
-best_fitness = min(fitnesses)
-best_tour = P[fitnesses.index(best_fitness)]
+# MAIN LOOP
+for i in range(max_it):
+    # evaluate each tour in population
+    fitness = [get_tour_length(tour) for tour in P]
 
-# MAIN LOOP - repeat until one of the following conditions hold:
-# certain number of iterations have been done
-# some individual is fit enough
-# time limit reached
-for it in range(max_it):
-    new_P = []
+    # select parents for crossover
+    parents = []
+    for j in range(pop_size):
+        # select two parents randomly
+        parent1 = P[random.randint(0, pop_size - 1)]
+        parent2 = P[random.randint(0, pop_size - 1)]
 
-    # create roulette wheel for selecting parents in P
-    # TODO look at alternatives slide 13
-    F = sum(fitnesses) # total fitness
-    probs = [f/F for f in fitnesses] # probability of selection proportional to fitness
+        # select parent with better fitness
+        if fitness[P.index(parent1)] < fitness[P.index(parent2)]:
+            parents.append(parent1)
+        else:
+            parents.append(parent2)
 
-    for i in range(pop_size):
-        # randomly choose two parents from P with 
-        # probability proportional to fitness
-        X = random.choices(P, weights = probs)[0]
-        Y = random.choices(P, weights = probs)[0]
+    # perform crossover
+    children = []
+    for j in range(0, pop_size, 2):
+        # select random crossover point
+        crossover_point = random.randint(0, num_cities - 1)
 
-        # crossover X and Y to produce Z
-        Z = crossover(X, Y)
+        # create children by swapping cities between parents
+        child1 = parents[j][:crossover_point] + [city for city in parents[j + 1] if city not in parents[j][:crossover_point]]
+        child2 = parents[j + 1][:crossover_point] + [city for city in parents[j] if city not in parents[j + 1][:crossover_point]]
 
-        # with small fixed probablity mutate Z
-        k = random.random() # pick a random probability (i.e. int between 0 and 1)
-        if k < p_mutation: 
-          mutate(Z)
-        
-        new_P.append(Z)
+        children.append(child1)
+        children.append(child2)
 
-    # update P & fitnesses
-    P = new_P
-    fitnesses = [get_tour_length(individual) for individual in P]
+    # perform mutation
+    for j in range(pop_size):
+        # randomly select two cities to swap
+        swap1 = random.randint(0, num_cities - 1)
+        swap2 = random.randint(0, num_cities - 1)
 
-    new_best_fitness = min(fitnesses)
-    new_best_tour = P[fitnesses.index(new_best_fitness)]
-    if new_best_fitness <= best_fitness:
-        best_tour = new_best_tour # keep best individual in memory
+        # swap cities in tour
+        if random.random() < p_mutation:
+            P[j][swap1], P[j][swap2] = P[j][swap2], P[j][swap1]
 
-    # TODO break if Z is fit enough
-    
+    # replace population with new generation
+    P = children
+
     # break if time limit reached
     if timed and (time.time() - start_time > time_limit):
         break
 
-# return best tour (fittest individual) and its length 
+# find best tour in final population
+best_fitness = min(fitness)
+best_tour = P[fitness.index(best_fitness)]
 tour = best_tour
 tour_length = get_tour_length(tour)
+
 
 ############ START OF SECTOR 10 (IGNORE THIS COMMENT)
 ############
