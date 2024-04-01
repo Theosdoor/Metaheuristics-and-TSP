@@ -157,7 +157,7 @@ def read_in_algorithm_codes_and_tariffs(alg_codes_file):
 ############
 ############ END OF SECTOR 0 (IGNORE THIS COMMENT)
 
-input_file = "AISearchfile042.txt"
+input_file = "AISearchfile012.txt"
 
 ############ START OF SECTOR 1 (IGNORE THIS COMMENT)
 ############
@@ -292,7 +292,7 @@ my_last_name = "Farrell"
 ############
 ############ END OF SECTOR 7 (IGNORE THIS COMMENT)
 
-algorithm_code = "GA"
+algorithm_code = "AC"
 
 ############ START OF SECTOR 8 (IGNORE THIS COMMENT)
 ############
@@ -353,21 +353,21 @@ added_note = ""
 ############
 ############ END OF SECTOR 9 (IGNORE THIS COMMENT)
 
-# Genetic
+# Ant Colony Optimisation
 timed = True
-time_limit = 59.6 # seconds
+time_limit = 50 # seconds
 
-# define relevant parameters
-max_it = 1000 # max number of generations
-pop_size = 100 # |P|
-p_mutation = 0.3 # small and fixed probability of mutation
-# TODO param to stop loop when good enough indiv found
+# define parameters
+max_it = 1000 # max number of iterations
+num_ants = num_cities # N
 
-# define function for getting tour length
-# & use as fitness function ==> minimise fitness fn
+alpha = 1 # pheromone influence
+beta = 3 # edge-distance influence
+rho = 0.5 # pheromone evaporation rate
+
+# function to get tour length
 def get_tour_length(tour):
     length = 0
-
     # sum distances between each city in tour
     for i in range(num_cities - 1):
         length += dist_matrix[tour[i]][tour[i + 1]]
@@ -375,116 +375,126 @@ def get_tour_length(tour):
     # add distance from end of tour back to start
     # for complete round tour
     length += dist_matrix[tour[num_cities - 1]][tour[0]]
-
     return length
 
-# define crossover
-def crossover(X, Y):
-    # split X, Y at random point
-    split = random.randint(0, num_cities - 1)
-    X_prefix, X_suffix = X[:split], X[split:]
-    Y_prefix, Y_suffix = Y[:split], Y[split:]
+# get nearest neighbour tour & length
+def nearest_neighbours():
+    # pick start city
+    nn_tour = [random.randint(0, num_cities - 1)]
 
-    # create 2 children that are valid tours
-    Z1 = X_prefix + [city for city in Y if city not in X_prefix]
-    Z2 = Y_prefix + [city for city in X if city not in Y_prefix]
+    # while tour not complete
+    while len(nn_tour) < num_cities:
+        current_city = nn_tour[-1]
+        unvisited = [city for city in range(num_cities) if city not in nn_tour]
 
-    # Z1 = X_prefix + Y_suffix
-    # Z2 = Y_prefix + X_suffix
-
-    # # if X_prefix and Y_suffix are disjoint ==> no repeat cities in Z1, Z2
-    # # since Y_prefix and X_suffix must also be disjoint
-    # if len(set(X_prefix) & set(Y_suffix)) > 0: # Z1 has repeats (so Z2 does too)
-    #     # make Z1 a valid tour by replacing repeated cities
-    #     replace_with = [city for city in Y_prefix if city not in X_prefix]
-    #     for i in range(len(Y_suffix)): # work through Z1 suffix
-    #         if Y_suffix[i] in X_prefix: # if repeated city
-    #             Z1[split + i] = replace_with.pop(0)
-            
-    #     # make Z2 a valid tour by replacing repeated cities
-    #     replace_with = [city for city in X_prefix if city not in Y_prefix]
-    #     for i in range(len(X_suffix)): # work through Z2 suffix
-    #         if X_suffix[i] in Y_prefix: # if repeated city
-    #             Z2[split + i] = replace_with.pop(0)
-
-    # return fittest child
-    if get_tour_length(Z1) >= get_tour_length(Z2):
-        return Z1
-    else:
-        return Z2
-
-# define mutation
-def mutate(Z):
-    '''
-    Mutation strategy: randomly swap two elements of Z
-
-    Note: modifies Z inplace
-    '''
-    # pick two random indices i, j
-    i = random.randint(0, num_cities - 1)
-    j = random.randint(0, num_cities - 1)
-
-    # swap cities
-    Z[i], Z[j] = Z[j], Z[i]
-
-# randomly generate initial population
-P = []
-for i in range(pop_size):
-    individual = list(range(num_cities)) # init tour: [0, 1, 2, ..., num_cities - 1]
-    random.shuffle(individual) # shuffle cities visited in each tour
-    P.append(individual) # add tour to population
-
-# init fitnesses and best individual
-fitnesses = [get_tour_length(individual) for individual in P]
-best_fitness = min(fitnesses)
-best_tour = P[fitnesses.index(best_fitness)]
-
-# MAIN LOOP - repeat until one of the following conditions hold:
-# certain number of iterations have been done
-# some individual is fit enough
-# time limit reached
-for it in range(max_it):
-    new_P = []
-
-    # create roulette wheel for selecting parents in P
-    # TODO look at alternatives slide 13
-    F = sum(fitnesses) # total fitness
-    probs = [f/F for f in fitnesses] # probability of selection proportional to fitness
-
-    for i in range(pop_size):
-        # randomly choose two parents from P with 
-        # probability proportional to fitness
-        X = random.choices(P, weights = probs)[0]
-        Y = random.choices(P, weights = probs)[0]
-
-        # crossover X and Y to produce Z
-        Z = crossover(X, Y)
-
-        # with small fixed probablity mutate Z
-        k = random.random() # pick a random probability (i.e. int between 0 and 1)
-        if k < p_mutation: 
-          mutate(Z)
-        
-        new_P.append(Z)
-
-    # update P & fitnesses
-    P = new_P
-    fitnesses = [get_tour_length(individual) for individual in P]
-
-    new_best_fitness = min(fitnesses)
-    new_best_tour = P[fitnesses.index(new_best_fitness)]
-    if new_best_fitness <= best_fitness:
-        best_tour = new_best_tour # keep best individual in memory
-
-    # TODO break if Z is fit enough
+        # get nearest city to current city
+        nearest_city = min(unvisited, key = lambda city: dist_matrix[current_city][city])
     
-    # break if time limit reached
-    if timed and (time.time() - start_time > time_limit):
-        break
+        # add nearest city to tour
+        nn_tour.append(nearest_city)
+        
+    return nn_tour
 
-# return best tour (fittest individual) and its length 
-tour = best_tour
+nn_tour = nearest_neighbours()
+nn_tour_length = get_tour_length(nn_tour)
+
+tau_0 = 1 / nn_tour_length # initial pheromone level
+
+class Ant:
+    def __init__(self, start_city):
+        self.tour = [start_city]
+        self.visited = [False] * num_cities
+        self.visited[start_city] = True
+        self.tour_length = 0
+
+    def visit_city(self, city):
+        self.tour.append(city)
+        self.visited[city] = True
+        self.tour_length += dist_matrix[self.tour[-2]][city]
+
+    def get_tour_length(self):
+        return self.tour_length
+
+    def get_tour(self):
+        return self.tour
+    
+    def get_last_city(self):
+        return self.tour[-1]
+    
+    def get_unvisited(self):
+        unvisited = []
+        for i in range(num_cities):
+            if not self.visited[i]:
+                unvisited.append(i)
+        return unvisited
+    
+    def get_probabilities(self, pheromones):
+        current = self.get_last_city()
+        unvisited = self.get_unvisited()
+        probabilities = []
+        total = 0
+
+        # calculate probabilities
+        for city in unvisited:
+            total += (pheromones[current][city] ** alpha) * ((1 / dist_matrix[current][city]) ** beta)
+
+        for city in unvisited:
+            probabilities.append((pheromones[current][city] ** alpha) * ((1 / dist_matrix[current][city]) ** beta) / total)
+
+        return probabilities
+    
+    def select_next_city(self, pheromones):
+        probabilities = self.get_probabilities(pheromones)
+        unvisited = self.get_unvisited()
+        next_city = random.choices(unvisited, probabilities)[0]
+        self.visit_city(next_city)
+
+class ACO:
+    def __init__(self, alpha, beta, rho):
+        self.alpha = alpha
+        self.beta = beta
+        self.rho = rho
+        self.best_tour = None
+        self.best_length = float('inf')
+        self.pheromones = [[tau_0 for _ in range(num_cities)] for _ in range(num_cities)]
+
+    def update_pheromones(self, ants):
+        # evaporation
+        for i in range(num_cities):
+            for j in range(num_cities):
+                self.pheromones[i][j] *= 1 - self.rho
+
+        # deposit
+        for ant in ants:
+            tour = ant.get_tour()
+            length = ant.get_tour_length()
+            for i in range(num_cities - 1):
+                self.pheromones[tour[i]][tour[i + 1]] += 1 / length
+            self.pheromones[tour[num_cities - 1]][tour[0]] += 1 / length
+
+    def run(self):
+        for it in range(max_it):
+            ants = [Ant(random.randint(0, num_cities - 1)) for _ in range(num_ants)]
+            for ant in ants:
+                while len(ant.get_tour()) < num_cities:
+                    ant.select_next_city(self.pheromones)
+                length = ant.get_tour_length()
+                if length < self.best_length:
+                    self.best_length = length
+                    self.best_tour = ant.get_tour()
+            self.update_pheromones(ants)
+
+            if timed and time.time() - start_time > time_limit:
+                break
+
+        return self.best_tour, self.best_length
+    
+aco = ACO(alpha, beta, rho)
+tour, _ = aco.run()
 tour_length = get_tour_length(tour)
+print("Success!")
+print(tour_length)
+exit()
 
 ############ START OF SECTOR 10 (IGNORE THIS COMMENT)
 ############

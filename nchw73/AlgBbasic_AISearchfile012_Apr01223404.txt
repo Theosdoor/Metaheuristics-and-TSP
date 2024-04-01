@@ -1,0 +1,7 @@
+USER = nchw73 (Theo Farrell),
+ALGORITHM CODE = AC, NAME OF CITY-FILE = AISearchfile012.txt,
+SIZE = 12, TOUR LENGTH = 56,
+3,9,2,8,7,0,10,11,6,1,5,4,
+NOTE = The parameter values are 'max_it' = 1000 and 'num_ants' = 12.
+RUN-TIME = 0.2 seconds.
+CERTIFICATE = 724.

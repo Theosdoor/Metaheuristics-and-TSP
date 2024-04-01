@@ -1,0 +1,7 @@
+USER = nchw73 (Theo Farrell),
+ALGORITHM CODE = PS, NAME OF CITY-FILE = AISearchfile012.txt,
+SIZE = 12, TOUR LENGTH = 78,
+6,1,3,2,9,4,5,8,7,0,10,11,
+NOTE = The parameter values are 'max_it' = 1000 and 'num_parts' = 100.
+RUN-TIME = 2.1 seconds.
+CERTIFICATE = 749.

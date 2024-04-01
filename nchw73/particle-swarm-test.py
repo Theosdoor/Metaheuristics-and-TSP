@@ -157,7 +157,7 @@ def read_in_algorithm_codes_and_tariffs(alg_codes_file):
 ############
 ############ END OF SECTOR 0 (IGNORE THIS COMMENT)
 
-input_file = "AISearchfile042.txt"
+input_file = "AISearchfile012.txt"
 
 ############ START OF SECTOR 1 (IGNORE THIS COMMENT)
 ############
@@ -292,7 +292,7 @@ my_last_name = "Farrell"
 ############
 ############ END OF SECTOR 7 (IGNORE THIS COMMENT)
 
-algorithm_code = "GA"
+algorithm_code = "PS"
 
 ############ START OF SECTOR 8 (IGNORE THIS COMMENT)
 ############
@@ -353,18 +353,15 @@ added_note = ""
 ############
 ############ END OF SECTOR 9 (IGNORE THIS COMMENT)
 
-# Genetic
+# particle swarm optimisation
 timed = True
-time_limit = 59.6 # seconds
+time_limit = 59 # seconds
 
 # define relevant parameters
 max_it = 1000 # max number of generations
-pop_size = 100 # |P|
-p_mutation = 0.3 # small and fixed probability of mutation
-# TODO param to stop loop when good enough indiv found
+num_parts = 100 # number of particles
 
 # define function for getting tour length
-# & use as fitness function ==> minimise fitness fn
 def get_tour_length(tour):
     length = 0
 
@@ -378,113 +375,59 @@ def get_tour_length(tour):
 
     return length
 
-# define crossover
-def crossover(X, Y):
-    # split X, Y at random point
-    split = random.randint(0, num_cities - 1)
-    X_prefix, X_suffix = X[:split], X[split:]
-    Y_prefix, Y_suffix = Y[:split], Y[split:]
+class Particle:
+    def __init__(self, tour):
+        self.tour = tour
+        self.length = get_tour_length(tour)
+        self.best_tour = tour
+        self.best_length = self.length
 
-    # create 2 children that are valid tours
-    Z1 = X_prefix + [city for city in Y if city not in X_prefix]
-    Z2 = Y_prefix + [city for city in X if city not in Y_prefix]
+    def update_best(self):
+        if self.length < self.best_length:
+            self.best_tour = self.tour
+            self.best_length = self.length
 
-    # Z1 = X_prefix + Y_suffix
-    # Z2 = Y_prefix + X_suffix
+    def update_tour(self, new_tour):
+        self.tour = new_tour
+        self.length = get_tour_length(new_tour)
 
-    # # if X_prefix and Y_suffix are disjoint ==> no repeat cities in Z1, Z2
-    # # since Y_prefix and X_suffix must also be disjoint
-    # if len(set(X_prefix) & set(Y_suffix)) > 0: # Z1 has repeats (so Z2 does too)
-    #     # make Z1 a valid tour by replacing repeated cities
-    #     replace_with = [city for city in Y_prefix if city not in X_prefix]
-    #     for i in range(len(Y_suffix)): # work through Z1 suffix
-    #         if Y_suffix[i] in X_prefix: # if repeated city
-    #             Z1[split + i] = replace_with.pop(0)
-            
-    #     # make Z2 a valid tour by replacing repeated cities
-    #     replace_with = [city for city in X_prefix if city not in Y_prefix]
-    #     for i in range(len(X_suffix)): # work through Z2 suffix
-    #         if X_suffix[i] in Y_prefix: # if repeated city
-    #             Z2[split + i] = replace_with.pop(0)
+# initialise particles
+particles = []
+for i in range(num_parts):
+    tour = list(range(num_cities))
+    random.shuffle(tour)
+    particles.append(Particle(tour))
 
-    # return fittest child
-    if get_tour_length(Z1) >= get_tour_length(Z2):
-        return Z1
-    else:
-        return Z2
+# initialise global best tour
+global_best = particles[0].tour
+global_best_length = particles[0].length
 
-# define mutation
-def mutate(Z):
-    '''
-    Mutation strategy: randomly swap two elements of Z
-
-    Note: modifies Z inplace
-    '''
-    # pick two random indices i, j
-    i = random.randint(0, num_cities - 1)
-    j = random.randint(0, num_cities - 1)
-
-    # swap cities
-    Z[i], Z[j] = Z[j], Z[i]
-
-# randomly generate initial population
-P = []
-for i in range(pop_size):
-    individual = list(range(num_cities)) # init tour: [0, 1, 2, ..., num_cities - 1]
-    random.shuffle(individual) # shuffle cities visited in each tour
-    P.append(individual) # add tour to population
-
-# init fitnesses and best individual
-fitnesses = [get_tour_length(individual) for individual in P]
-best_fitness = min(fitnesses)
-best_tour = P[fitnesses.index(best_fitness)]
-
-# MAIN LOOP - repeat until one of the following conditions hold:
-# certain number of iterations have been done
-# some individual is fit enough
-# time limit reached
+# main loop
 for it in range(max_it):
-    new_P = []
+    for p in particles:
+        # update particle's tour
+        new_tour = p.tour.copy()
+        random.shuffle(new_tour)
+        p.update_tour(new_tour)
 
-    # create roulette wheel for selecting parents in P
-    # TODO look at alternatives slide 13
-    F = sum(fitnesses) # total fitness
-    probs = [f/F for f in fitnesses] # probability of selection proportional to fitness
+        # update particle's best tour
+        p.update_best()
 
-    for i in range(pop_size):
-        # randomly choose two parents from P with 
-        # probability proportional to fitness
-        X = random.choices(P, weights = probs)[0]
-        Y = random.choices(P, weights = probs)[0]
+        # update global best tour
+        if p.best_length < global_best_length:
+            global_best = p.best_tour
+            global_best_length = p.best_length
 
-        # crossover X and Y to produce Z
-        Z = crossover(X, Y)
+    # check if time limit reached
+    if timed:
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        if elapsed_time > time_limit:
+            break
 
-        # with small fixed probablity mutate Z
-        k = random.random() # pick a random probability (i.e. int between 0 and 1)
-        if k < p_mutation: 
-          mutate(Z)
-        
-        new_P.append(Z)
-
-    # update P & fitnesses
-    P = new_P
-    fitnesses = [get_tour_length(individual) for individual in P]
-
-    new_best_fitness = min(fitnesses)
-    new_best_tour = P[fitnesses.index(new_best_fitness)]
-    if new_best_fitness <= best_fitness:
-        best_tour = new_best_tour # keep best individual in memory
-
-    # TODO break if Z is fit enough
-    
-    # break if time limit reached
-    if timed and (time.time() - start_time > time_limit):
-        break
-
-# return best tour (fittest individual) and its length 
-tour = best_tour
-tour_length = get_tour_length(tour)
+# set tour and tour length
+tour = global_best
+tour_length = global_best_length
 
 ############ START OF SECTOR 10 (IGNORE THIS COMMENT)
 ############
