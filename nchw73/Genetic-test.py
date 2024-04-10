@@ -354,7 +354,7 @@ added_note = ""
 ############ END OF SECTOR 9 (IGNORE THIS COMMENT)
 
 # Genetic
-timed = True
+timed = False
 time_limit = 59 # seconds
 
 # define relevant parameters
@@ -364,16 +364,13 @@ p_mutation = 0.1 # small and fixed probability of mutation
 
 # define function for getting tour length
 def get_tour_length(tour):
-    length = 0
-
     # sum distances between each city in tour
+    length = 0
     for i in range(num_cities - 1):
         length += dist_matrix[tour[i]][tour[i + 1]]
-
-    # add distance from end of tour back to start
-    # for complete round tour
-    length += dist_matrix[tour[num_cities - 1]][tour[0]]
-
+    # if tour is complete, add dist back to start city
+    if len(tour) == num_cities:
+        length += dist_matrix[tour[num_cities - 1]][tour[0]]
     return length
 
 # randomly generate initial population
@@ -383,10 +380,15 @@ for i in range(pop_size):
     random.shuffle(individual) # shuffle cities visited in each tour
     P.append(individual) # add tour to population
 
+# init fitnesses and best individual
+fitness = [get_tour_length(tour) for tour in P]
+best_fitness = min(fitness)
+best_tour = P[fitness.index(best_fitness)]
+
 # MAIN LOOP
-for i in range(max_it):
-    # evaluate each tour in population
-    fitness = [get_tour_length(tour) for tour in P]
+for it in range(max_it):
+    if it % 50 == 0:
+        print("it: " + str(it) + "/" + str(max_it) + ".")
 
     # select parents for crossover
     parents = []
@@ -427,13 +429,18 @@ for i in range(max_it):
     # replace population with new generation
     P = children
 
+    # update best tour if necessary
+    fitness = [get_tour_length(tour) for tour in P]
+    if min(fitness) < best_fitness:
+        best_fitness = min(fitness)
+        best_tour = P[fitness.index(best_fitness)]
+        print(get_tour_length(best_tour))
+
     # break if time limit reached
     if timed and (time.time() - start_time > time_limit):
         break
 
 # find best tour in final population
-best_fitness = min(fitness)
-best_tour = P[fitness.index(best_fitness)]
 tour = best_tour
 tour_length = get_tour_length(tour)
 

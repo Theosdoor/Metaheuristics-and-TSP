@@ -1,7 +1,0 @@
-USER = nchw73 (Theo Farrell),
-ALGORITHM CODE = GA, NAME OF CITY-FILE = AISearchfile012.txt,
-SIZE = 12, TOUR LENGTH = 87,
-2,7,0,10,11,6,1,3,5,9,4,8,
-NOTE = The parameter values are 'max_it' = 1000 and 'pop_size' = 100.
-RUN-TIME = 4.0 seconds.
-CERTIFICATE = 730.

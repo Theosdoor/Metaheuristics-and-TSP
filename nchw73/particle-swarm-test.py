@@ -419,11 +419,9 @@ for it in range(max_it):
             global_best_length = p.best_length
 
     # check if time limit reached
-    if timed:
-        end_time = time.time()
-        elapsed_time = end_time - start_time
-        if elapsed_time > time_limit:
-            break
+    if timed and (time.time() - start_time > time_limit):
+        print("Time's up!\n")
+        break
 
 # set tour and tour length
 tour = global_best

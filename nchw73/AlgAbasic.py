@@ -353,30 +353,115 @@ added_note = ""
 ############
 ############ END OF SECTOR 9 (IGNORE THIS COMMENT)
 
-# Genetic
-timed = True
-time_limit = 59.6 # seconds
+# Genetic algorithm
+timed = False
+time_limit = 120 # seconds
+if timed:
+    added_note += "Time limit = " + str(time_limit) + " seconds.\n"
 
-# define relevant parameters
-max_it = 1000 # max number of generations
-pop_size = 100 # |P|
-p_mutation = 0.3 # small and fixed probability of mutation
-# TODO param to stop loop when good enough indiv found
+# for added NOTE
+first_best_update = 0 # iteration of first best tour update
+last_best_update = 0 # iteration of last best tour update
+
+# define core parameters
+max_it = 2000 # max number of generations
+pop_size = 250 # |P|
+p_mutation = 0.2 # small and fixed probability of mutation
+
+added_note += "p_mutation = " + str(p_mutation) + ".\n"
 
 # define function for getting tour length
-# & use as fitness function ==> minimise fitness fn
 def get_tour_length(tour):
-    length = 0
-
     # sum distances between each city in tour
+    length = 0
     for i in range(num_cities - 1):
         length += dist_matrix[tour[i]][tour[i + 1]]
-
-    # add distance from end of tour back to start
-    # for complete round tour
-    length += dist_matrix[tour[num_cities - 1]][tour[0]]
-
+    # if tour is complete, add dist back to start city
+    if len(tour) == num_cities:
+        length += dist_matrix[tour[num_cities - 1]][tour[0]]
     return length
+
+# function for nearest neighbour tour & length
+def nearest_neighbours(start_city=None):
+    '''
+    Basic greedy search for shortest tour, 
+        starting from random or specified city.
+
+    Complexity: O(n^2), n = num_cities
+    '''
+    # pick start city
+    if start_city is None:
+        nn_tour = [random.randint(0, num_cities - 1)]
+    else:
+        nn_tour = [start_city]
+
+    # maintain list of unvisited cities
+    unvisited = list(range(num_cities))
+    unvisited.remove(nn_tour[0])
+
+    # while tour not complete
+    while len(nn_tour) < num_cities:
+        # get distances from current city
+        current = nn_tour[-1]
+        distances = dist_matrix[current]
+
+        # get nearest unvisited city
+        nearest = unvisited[0]
+        for city in unvisited:
+            if distances[city] < distances[nearest]:
+                nearest = city
+    
+        # add nearest to tour and remove from univisted list
+        nn_tour.append(nearest)
+        unvisited.remove(nearest)
+
+    return nn_tour
+
+# If num_cities is small, try all start cities for shortest nn tour
+# otherwise use random start city for nn tour
+# NOTE n < 200 takes less than 1 second to iterate all
+if num_cities < 200:
+    nn_tour = None
+    nn_tour_length = float('inf')
+    for i in range(num_cities):
+        ith_tour = nearest_neighbours(start_city=i)
+        ith_tour_length = get_tour_length(ith_tour)
+        if ith_tour_length < nn_tour_length:
+            nn_tour_length = ith_tour_length
+            nn_tour = ith_tour
+else:
+    nn_tour = nearest_neighbours()
+    nn_tour_length = get_tour_length(nn_tour)
+
+sat_tour_length = 0.5 * nn_tour_length # tour length at which to stop
+
+# define fitness function
+def get_fitnesses(P):
+    '''
+    Shorter tour ==> greater fitness
+    '''
+    return [1/(get_tour_length(ind) + 0.00001) for ind in P]
+
+    tour_lengths = [get_tour_length(individual) for individual in P]
+    tau = max(tour_lengths) + 0.1
+    return [tau - length for length in tour_lengths]
+
+# define parent selection process
+def roulette_wheel(P, probs):
+    '''
+    Select parent from P using given probabilities
+    using roulette wheel approach
+    '''
+    sector_angles = [p * 360 for p in probs]
+    select = random.uniform(0, 360)
+
+    # find selected sector
+    sector = 0
+    while select > sector_angles[sector]:
+        select -= sector_angles[sector]
+        sector += 1
+
+    return P[sector]
 
 # define crossover
 def crossover(X, Y):
@@ -408,7 +493,7 @@ def crossover(X, Y):
     #             Z2[split + i] = replace_with.pop(0)
 
     # return fittest child
-    if get_tour_length(Z1) >= get_tour_length(Z2):
+    if get_tour_length(Z1) < get_tour_length(Z2):
         return Z1
     else:
         return Z2
@@ -416,7 +501,8 @@ def crossover(X, Y):
 # define mutation
 def mutate(Z):
     '''
-    Mutation strategy: randomly swap two elements of Z
+    Mutation strategy: randomly swap two elements of Z.
+    NOTE may be same two elements (i = j)
 
     Note: modifies Z inplace
     '''
@@ -435,15 +521,18 @@ for i in range(pop_size):
     P.append(individual) # add tour to population
 
 # init fitnesses and best individual
-fitnesses = [get_tour_length(individual) for individual in P]
-best_fitness = min(fitnesses)
+fitnesses = get_fitnesses(P)
+best_fitness = max(fitnesses)
 best_tour = P[fitnesses.index(best_fitness)]
 
-# MAIN LOOP - repeat until one of the following conditions hold:
-# certain number of iterations have been done
-# some individual is fit enough
+# MAIN LOOP until:
+# certain number of iterations done or
+# some individual is fit enough or
 # time limit reached
 for it in range(max_it):
+    if it % 50 == 0:
+        print("it: " + str(it) + "/" + str(max_it) + ".")
+
     new_P = []
 
     # create roulette wheel for selecting parents in P
@@ -454,8 +543,11 @@ for it in range(max_it):
     for i in range(pop_size):
         # randomly choose two parents from P with 
         # probability proportional to fitness
-        X = random.choices(P, weights = probs)[0]
-        Y = random.choices(P, weights = probs)[0]
+        # NOTE X may = Y
+        X = random.choices(P, weights=probs)[0]
+        Y = random.choices(P, weights=probs)[0]
+        # X = roulette_wheel(P, probs)
+        # Y = roulette_wheel(P, probs)
 
         # crossover X and Y to produce Z
         Z = crossover(X, Y)
@@ -469,20 +561,45 @@ for it in range(max_it):
 
     # update P & fitnesses
     P = new_P
-    fitnesses = [get_tour_length(individual) for individual in P]
+    fitnesses = get_fitnesses(P)
 
-    new_best_fitness = min(fitnesses)
-    new_best_tour = P[fitnesses.index(new_best_fitness)]
-    if new_best_fitness <= best_fitness:
-        best_tour = new_best_tour # keep best individual in memory
+    # update best if improved
+    new_best_fitness = max(fitnesses)
+    if new_best_fitness > best_fitness:
+        best_fitness = new_best_fitness
+        best_tour = P[fitnesses.index(best_fitness)] # keep best individual in memory
+        last_best_update = it
+        if first_best_update == 0:
+            first_best_update = it
+        print("BEST LENGTH:", get_tour_length(best_tour))
 
-    # TODO break if Z is fit enough
+        # break if Z is fit enough
+        if get_tour_length(best_tour) <= sat_tour_length:
+            print("Tour fit enough\n")
+            break
+
+        # modify p_mutation if stagnates
+        if it - last_best_update > 500:
+            print("Stagnated, increasing p_mutation\n")
+            p_mutation = 0.3
+        elif it - last_best_update > 800:
+            print("Stagnated, increasing p_mutation\n")
+            p_mutation = 0.5
+        else:
+            if p_mutation > 0.2:
+                print("Reducing p_mutation\n")
+                p_mutation = 0.2
+
     
     # break if time limit reached
     if timed and (time.time() - start_time > time_limit):
+        print("Time's up!\n")
         break
 
-# return best tour (fittest individual) and its length 
+added_note += "First best tour update at it = " + str(first_best_update) + ".\n"
+added_note += "Last best tour update at it = " + str(last_best_update) + ".\n"
+
+# output
 tour = best_tour
 tour_length = get_tour_length(tour)
 

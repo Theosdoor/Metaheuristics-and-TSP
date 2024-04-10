@@ -353,148 +353,59 @@ added_note = ""
 ############
 ############ END OF SECTOR 9 (IGNORE THIS COMMENT)
 
-# Ant Colony Optimisation
+# Simulated Annealing algorithm
 timed = True
-time_limit = 50 # seconds
+time_limit = 3600 # seconds
 
-# define parameters
-max_it = 1000 # max number of iterations
-num_ants = num_cities # N
-
-alpha = 1 # pheromone influence
-beta = 3 # edge-distance influence
-rho = 0.5 # pheromone evaporation rate
+# Parameters
+T = 1000
+alpha = 0.999
+max_it = 1000
 
 # function to get tour length
 def get_tour_length(tour):
-    length = 0
     # sum distances between each city in tour
+    length = 0
     for i in range(num_cities - 1):
         length += dist_matrix[tour[i]][tour[i + 1]]
-
-    # add distance from end of tour back to start
-    # for complete round tour
-    length += dist_matrix[tour[num_cities - 1]][tour[0]]
+    # if tour is complete, add dist back to start city
+    if len(tour) == num_cities:
+        length += dist_matrix[tour[num_cities - 1]][tour[0]]
     return length
 
-# get nearest neighbour tour & length
-def nearest_neighbours():
-    # pick start city
-    nn_tour = [random.randint(0, num_cities - 1)]
-
-    # while tour not complete
-    while len(nn_tour) < num_cities:
-        current_city = nn_tour[-1]
-        unvisited = [city for city in range(num_cities) if city not in nn_tour]
-
-        # get nearest city to current city
-        nearest_city = min(unvisited, key = lambda city: dist_matrix[current_city][city])
-    
-        # add nearest city to tour
-        nn_tour.append(nearest_city)
-        
-    return nn_tour
-
-nn_tour = nearest_neighbours()
-nn_tour_length = get_tour_length(nn_tour)
-
-tau_0 = 1 / nn_tour_length # initial pheromone level
-
-class Ant:
-    def __init__(self, start_city):
-        self.tour = [start_city]
-        self.visited = [False] * num_cities
-        self.visited[start_city] = True
-        self.tour_length = 0
-
-    def visit_city(self, city):
-        self.tour.append(city)
-        self.visited[city] = True
-        self.tour_length += dist_matrix[self.tour[-2]][city]
-
-    def get_tour_length(self):
-        return self.tour_length
-
-    def get_tour(self):
-        return self.tour
-    
-    def get_last_city(self):
-        return self.tour[-1]
-    
-    def get_unvisited(self):
-        unvisited = []
-        for i in range(num_cities):
-            if not self.visited[i]:
-                unvisited.append(i)
-        return unvisited
-    
-    def get_probabilities(self, pheromones):
-        current = self.get_last_city()
-        unvisited = self.get_unvisited()
-        probabilities = []
-        total = 0
-
-        # calculate probabilities
-        for city in unvisited:
-            total += (pheromones[current][city] ** alpha) * ((1 / dist_matrix[current][city]) ** beta)
-
-        for city in unvisited:
-            probabilities.append((pheromones[current][city] ** alpha) * ((1 / dist_matrix[current][city]) ** beta) / total)
-
-        return probabilities
-    
-    def select_next_city(self, pheromones):
-        probabilities = self.get_probabilities(pheromones)
-        unvisited = self.get_unvisited()
-        next_city = random.choices(unvisited, probabilities)[0]
-        self.visit_city(next_city)
-
-class ACO:
-    def __init__(self, alpha, beta, rho):
-        self.alpha = alpha
-        self.beta = beta
-        self.rho = rho
-        self.best_tour = None
-        self.best_length = float('inf')
-        self.pheromones = [[tau_0 for _ in range(num_cities)] for _ in range(num_cities)]
-
-    def update_pheromones(self, ants):
-        # evaporation
-        for i in range(num_cities):
-            for j in range(num_cities):
-                self.pheromones[i][j] *= 1 - self.rho
-
-        # deposit
-        for ant in ants:
-            tour = ant.get_tour()
-            length = ant.get_tour_length()
-            for i in range(num_cities - 1):
-                self.pheromones[tour[i]][tour[i + 1]] += 1 / length
-            self.pheromones[tour[num_cities - 1]][tour[0]] += 1 / length
-
-    def run(self):
-        for it in range(max_it):
-            ants = [Ant(random.randint(0, num_cities - 1)) for _ in range(num_ants)]
-            for ant in ants:
-                while len(ant.get_tour()) < num_cities:
-                    ant.select_next_city(self.pheromones)
-                length = ant.get_tour_length()
-                if length < self.best_length:
-                    self.best_length = length
-                    self.best_tour = ant.get_tour()
-            self.update_pheromones(ants)
-
-            if timed and time.time() - start_time > time_limit:
-                break
-
-        return self.best_tour, self.best_length
-    
-aco = ACO(alpha, beta, rho)
-tour, _ = aco.run()
+# Initialisation
+tour = list(range(num_cities))
 tour_length = get_tour_length(tour)
-print("Success!")
-print(tour_length)
-exit()
+best_tour = tour.copy()
+best_tour_length = tour_length
+
+# Main loop
+for it in range(max_it):
+    # Cooling
+    T *= alpha
+    # Generate new tour
+    new_tour = tour.copy()
+    # Swap two cities
+    i, j = random.sample(range(num_cities), 2)
+    new_tour[i], new_tour[j] = new_tour[j], new_tour[i]
+    new_tour_length = get_tour_length(new_tour)
+    # Acceptance probability
+    p = random.random()
+    if new_tour_length < tour_length or p < 2.71828**((tour_length - new_tour_length)/T):
+        tour = new_tour
+        tour_length = new_tour_length
+    # Update best tour
+    if tour_length < best_tour_length:
+        best_tour = tour.copy()
+        best_tour_length = tour_length
+
+    # Check time limit
+    if timed and time.time() - start_time > time_limit:
+        break
+
+# Output best tour
+tour = best_tour
+tour_length = best_tour_length
 
 ############ START OF SECTOR 10 (IGNORE THIS COMMENT)
 ############

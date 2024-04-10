@@ -1,0 +1,11 @@
+USER = nchw73 (Theo Farrell),
+ALGORITHM CODE = AC, NAME OF CITY-FILE = AISearchfile017.txt,
+SIZE = 17, TOUR LENGTH = 1444,
+12,5,1,11,2,13,14,8,15,3,4,7,16,9,0,10,6,
+NOTE = ACO algorithm with EAS.
+alpha = 1, beta = 2, rho = 0.5.
+w = 17.
+tau_0 = 110704.0.
+The parameter values are 'max_it' = 1000 and 'num_ants' = 17.
+RUN-TIME = 13.3 seconds.
+CERTIFICATE = 786.
