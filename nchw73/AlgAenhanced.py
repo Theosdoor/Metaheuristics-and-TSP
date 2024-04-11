@@ -157,7 +157,7 @@ def read_in_algorithm_codes_and_tariffs(alg_codes_file):
 ############
 ############ END OF SECTOR 0 (IGNORE THIS COMMENT)
 
-input_file = "AISearchfile535.txt"
+input_file = "AISearchfile175.txt"
 
 ############ START OF SECTOR 1 (IGNORE THIS COMMENT)
 ############
@@ -354,8 +354,8 @@ added_note = ""
 ############ END OF SECTOR 9 (IGNORE THIS COMMENT)
 
 # Genetic algorithm
-timed = False
-time_limit = 120 # seconds
+timed = True
+time_limit = 300 # seconds
 if timed:
     added_note += "Time limit = " + str(time_limit) + " seconds.\n"
 
@@ -366,13 +366,22 @@ last_best_update = 0 # iteration of last best tour update
 # define core parameters
 max_it = 2000 # max number of generations
 pop_size = 250 # |P|
-p_mutation = 0.2 # small and fixed probability of mutation
-sat_tour_length = 0 # tour length at which to stop
+p_crossover = 0.9 # probability of crossover
+# p_mutation - small probability of mutation
+# change dynamically if certain conditions met (see MAIN LOOP)
+# REQUIRE p1 < p2 < p3 < p4
+p1 = 0.2
+p_mutation = p1 # same as AlgAbasic
+p2 = 0.4
+p2_thresh = 0.1*max_it
+p3 = 0.6
+p3_thresh = 0.25*max_it
+p4 = 0.8
+p4_thresh = 0.5*max_it
 
-added_note += "p_mutation = " + str(p_mutation) + ".\n"
+added_note += "Starting p_mutation = " + str(p_mutation) + ".\n"
 
 # define function for getting tour length
-# fitness(individual) = tour length
 def get_tour_length(tour):
     # sum distances between each city in tour
     length = 0
@@ -423,6 +432,7 @@ def nearest_neighbours(start_city=None):
 # otherwise use random start city for nn tour
 # NOTE n < 200 takes less than 1 second to iterate all
 if num_cities < 200:
+    nn_tours = []
     nn_tour = None
     nn_tour_length = float('inf')
     for i in range(num_cities):
@@ -431,29 +441,33 @@ if num_cities < 200:
         if ith_tour_length < nn_tour_length:
             nn_tour_length = ith_tour_length
             nn_tour = ith_tour
+        nn_tours.append(ith_tour)
+    # sort nn tour list by length
+    nn_tours.sort(key=lambda t: get_tour_length(t))
+    if len(nn_tours) > pop_size:
+        nn_tours = nn_tours[:pop_size]
 else:
     nn_tour = nearest_neighbours()
     nn_tour_length = get_tour_length(nn_tour)
+    nn_tours = [nn_tour]
 
-sat_tour_length = 0.5 * nn_tour_length
+sat_tour_length = 0.5 * nn_tour_length # tour length at which to stop
 
 # define f_min function to use GA to minimise tour length
-def get_f_mins(P, tau=1):
+def get_f_mins(P):
     '''
     NOTE Tau strictly greater than any individual tour length
-    Default = 1 is arbitrary initial value.
 
-    Shorter tour ==> greater f_min
-    Tau too large ==> P's fitness values 'pushed together'
-    Different tau b/t populations ==> cannot reliably compare b/t populations
-        ==> must update f_min(best) if tau changes
+    Shorter tour ==> greater fitness
+    Tau too large ==> P's fitnesses 'pushed together'
+    Adaptive tau is relative to tour lengths in current P 
+        ==> can't reliably compare fitnesses between P's
     '''
     tour_lengths = [get_tour_length(i) for i in P]
-    # update tau to be larger than any individual length
-    tau = max(tour_lengths) + 1
-    return [(tau - l) for l in tour_lengths], tau
+    tau = max(tour_lengths)
+    return [(tau - l) for l in tour_lengths]
 
-def roulette_wheel(P, probs):
+def select(P, probs):
     '''
     Select parent from P using given probabilities
     using roulette wheel approach
@@ -473,29 +487,60 @@ def roulette_wheel(P, probs):
 
 # define crossover
 def crossover(X, Y):
-    # split X, Y at random point
-    split = random.randint(0, num_cities - 1)
-    X_prefix, X_suffix = X[:split], X[split:]
-    Y_prefix, Y_suffix = Y[:split], Y[split:]
+    '''
+    from https://www.researchgate.net/publication/41847011_Genetic_Algorithm_for_the_Traveling_Salesman_Problem_using_Sequential_Constructive_Crossover_Operator 
+    '''
+    # init children
+    Z1 = [X[0]]
+    Z2 = [Y[0]]
 
-    # create 2 children that are valid tours
-    Z1 = X_prefix + Y_suffix
-    Z2 = Y_prefix + X_suffix
+    # while Z1 not complete
+    while len(Z1) < num_cities:
+        current = Z1[-1]
 
-    # if X_prefix and Y_suffix are disjoint ==> no repeat cities in Z1, Z2
-    # since Y_prefix and X_suffix must also be disjoint
-    if len(set(X_prefix) & set(Y_suffix)) > 0: # Z1 has repeats (so Z2 does too)
-        # make Z1 a valid tour by replacing repeated cities
-        replace_with = [city for city in Y_prefix if city not in X_prefix]
-        for i in range(len(Y_suffix)): # work through Z1 suffix
-            if Y_suffix[i] in X_prefix: # if repeated city
-                Z1[split + i] = replace_with.pop(0)
-            
-        # make Z2 a valid tour by replacing repeated cities
-        replace_with = [city for city in X_prefix if city not in Y_prefix]
-        for i in range(len(X_suffix)): # work through Z2 suffix
-            if X_suffix[i] in Y_prefix: # if repeated city
-                Z2[split + i] = replace_with.pop(0)
+        # get next unvisited city in X
+        X_next_pos = (X.index(current) + 1) % num_cities
+        X_next = X[X_next_pos]
+        while X_next in Z1:
+            X_next_pos = (X_next_pos + 1) % num_cities
+            X_next = X[X_next_pos]
+        # print("X_next:", X_next, "Distance:", dist_matrix[current][X_next])
+
+        # get next unvisited city in Y
+        Y_next_pos = (Y.index(current) + 1) % num_cities
+        Y_next = Y[Y_next_pos]
+        while Y_next in Z1:
+            Y_next_pos = (Y_next_pos + 1) % num_cities
+            Y_next = Y[Y_next_pos]
+        # print("Y_next:", Y_next, "Distance:", dist_matrix[current][Y_next])
+
+        # compare distances
+        if dist_matrix[current][X_next] < dist_matrix[current][Y_next]:
+            Z1.append(X_next)
+        else:
+            Z1.append(Y_next)
+        # print(Z1)
+
+    # repeat for Z2
+    while len(Z2) < num_cities:
+        current = Z2[-1]
+
+        X_next_pos = (X.index(current) + 1) % num_cities
+        X_next = X[X_next_pos]
+        while X_next in Z2:
+            X_next_pos = (X_next_pos + 1) % num_cities
+            X_next = X[X_next_pos]
+
+        Y_next_pos = (Y.index(current) + 1) % num_cities
+        Y_next = Y[Y_next_pos]
+        while Y_next in Z2:
+            Y_next_pos = (Y_next_pos + 1) % num_cities
+            Y_next = Y[Y_next_pos]
+
+        if dist_matrix[current][X_next] < dist_matrix[current][Y_next]:
+            Z2.append(X_next)
+        else:
+            Z2.append(Y_next)
 
     # return fittest child
     if get_tour_length(Z1) < get_tour_length(Z2):
@@ -518,18 +563,23 @@ def mutate(Z):
     # swap cities
     Z[i], Z[j] = Z[j], Z[i]
 
-# randomly generate initial population
-P = []
-for i in range(pop_size):
-    individual = list(range(num_cities)) # init tour: [0, 1, 2, ..., num_cities - 1]
-    random.shuffle(individual) # shuffle cities visited in each tour
+# generate initial population
+# mix of nn_tours and random ones
+P = [nn_tour]
+for i in range(pop_size - 1):
+    if i % 2 == 0:
+        individual = list(range(num_cities)) # init tour: [0, 1, 2, ..., num_cities - 1]
+        random.shuffle(individual) # shuffle cities visited in each tour
+    else:
+        start = random.randint(0, num_cities - 1) # choose random start city
+        individual = nearest_neighbours(start) # create nn tour
+
     P.append(individual) # add tour to population
 
-# init tau, fitness list, best and worst individuals
-f_mins, tau = get_f_mins(P)
+# init fitness list and best individual
+f_mins = get_f_mins(P)
 best_fitness = max(f_mins)
 best_tour = P[f_mins.index(best_fitness)]
-best_tour_tau = tau
 
 # MAIN LOOP until:
 # certain number of iterations done or
@@ -537,7 +587,7 @@ best_tour_tau = tau
 # time limit reached
 for it in range(max_it):
     if it % 50 == 0:
-        print("it: " + str(it) + "/" + str(max_it) + ".")
+        print("it:", it, "/", max_it)
         print("BEST LENGTH:", get_tour_length(best_tour))
 
     new_P = []
@@ -547,34 +597,33 @@ for it in range(max_it):
     probs = [f/F for f in f_mins] # probability of selection proportional to fitness
 
     for i in range(pop_size):
-        # randomly choose two parents from P with 
+        # randomly choose two parents from P with
         # probability proportional to fitness
         # NOTE X may = Y
-        X = roulette_wheel(P, probs)
-        Y = roulette_wheel(P, probs)
+        X = select(P, probs)
+        Y = select(P, probs)
 
         # crossover X and Y to produce Z
-        Z = crossover(X, Y)
+        if random.random() <= p_crossover:
+            Z = crossover(X, Y)
+        else:
+            Z = X
 
         # with small fixed probablity mutate Z
         k = random.random() # pick a random probability (i.e. int between 0 and 1)
-        if k <= p_mutation: 
+        if k <= p_mutation:
           mutate(Z)
-        
+
         new_P.append(Z)
 
-    # update P & f_mins
+    # update P & fitnesses
     P = new_P
-    f_mins, tau = get_f_mins(P, tau)
+    f_mins = get_f_mins(P)
 
-    # if tau different from that used to calulate best_fitness, recalculate f_min(best)
-    if tau != best_tour_tau:
-        best_fitness = tau - get_tour_length(best_tour)
-        best_tour_tau = tau
-
-    # update best with fitter individual
+    # update best if improved
     temp_best_fitness = max(f_mins)
-    if temp_best_fitness > best_fitness:
+    temp_best = P[f_mins.index(temp_best_fitness)]
+    if get_tour_length(temp_best) < get_tour_length(best_tour):
         best_fitness = temp_best_fitness
         best_tour = P[f_mins.index(best_fitness)] # keep best individual in memory
         last_best_update = it
@@ -582,10 +631,26 @@ for it in range(max_it):
             first_best_update = it
 
         # break if fit enough
-        if get_tour_length(best_tour) <= sat_tour_length:
-            print("Tour fit enough\n")
-            break
-    
+        # if get_tour_length(best_tour) <= sat_tour_length:
+        #     print("Tour fit enough\n")
+        #     break
+
+    # update p_mutation if GA stagnates or P sufficiently homogeneous
+    if it - last_best_update > p2_thresh and p_mutation < p2:
+        print("Stagnated, increasing p_mutation to", p2, "...")
+        p_mutation = p2
+    elif it - last_best_update > p3_thresh and p_mutation < p3:
+        print("Stagnated, increasing p_mutation to", p3, "...")
+        p_mutation = p3
+    elif it - last_best_update > p4_thresh and p_mutation < p4:
+        print("Stagnated, increasing p_mutation to", p4, "...")
+        p_mutation = p4
+    else:
+        # reduce p_mutation if rate of improvement increases
+        if p_mutation > p1 and it - last_best_update < p2_thresh:
+            print("Reducing p_mutation...")
+            p_mutation = p1
+
     # break if time limit reached
     if timed and (time.time() - start_time > time_limit):
         print("Time's up!\n")

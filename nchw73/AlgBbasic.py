@@ -157,7 +157,7 @@ def read_in_algorithm_codes_and_tariffs(alg_codes_file):
 ############
 ############ END OF SECTOR 0 (IGNORE THIS COMMENT)
 
-input_file = "AISearchfile535.txt"
+input_file = "AISearchfile042.txt"
 
 ############ START OF SECTOR 1 (IGNORE THIS COMMENT)
 ############
@@ -483,11 +483,13 @@ else:
 
 tau = [[tau_0] * num_cities for _ in range(num_cities)]
 
-added_note += "tau_0 = " + str(tau_0) + "."
+added_note += "tau_0 = " + str(tau_0) + ".\n"
 
 # init best tour & length
 best_tour = nn_tour
 best_tour_length = nn_tour_length
+
+print("NN tour length:", nn_tour_length)
 
 # specifically place one ant on each city at start
 ants = [Ant(i) for i in range(num_cities)]
