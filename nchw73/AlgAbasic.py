@@ -367,13 +367,20 @@ last_best_update = 0 # iteration of last best tour update
 max_it = 2000 # max number of generations
 pop_size = 250 # |P|
 p_mutation = 0.2 # small and fixed probability of mutation
-sat_tour_length = 0 # tour length at which to stop
 
 added_note += "p_mutation = " + str(p_mutation) + ".\n"
+
+# uninitialised variables
+sat_tour_length = 0 # tour length at which to stop and return best tour so far
 
 # define function for getting tour length
 # fitness(individual) = tour length
 def get_tour_length(tour):
+    '''
+    Returns length of given tour.
+
+    O(n), n = cities in tour (= num_cities if tour complete)
+    '''
     # sum distances between each city in tour
     length = 0
     for i in range(num_cities - 1):
@@ -386,7 +393,7 @@ def get_tour_length(tour):
 # function for nearest neighbour tour & length
 def nearest_neighbours(start_city=None):
     '''
-    Basic greedy search for shortest tour, 
+    Basic nearest neighbour search for shortest tour, 
         starting from random or specified city.
 
     Complexity: O(n^2), n = num_cities
@@ -409,7 +416,7 @@ def nearest_neighbours(start_city=None):
 
         # get nearest unvisited city
         nearest = unvisited[0]
-        for city in unvisited:
+        for city in unvisited[1:]:
             if distances[city] < distances[nearest]:
                 nearest = city
     
@@ -435,13 +442,18 @@ else:
     nn_tour = nearest_neighbours()
     nn_tour_length = get_tour_length(nn_tour)
 
+# tour good enough if it is less than half the length of a nn tour
 sat_tour_length = 0.5 * nn_tour_length
 
 # define f_min function to use GA to minimise tour length
 def get_f_mins(P, tau=1):
     '''
-    NOTE Tau strictly greater than any individual tour length
-    Default = 1 is arbitrary initial value.
+    Fitness function to maximise.
+    Returns fitness of individuals in P.
+
+    Strategy: f_min = tau - tour length
+    Note: tau must be strictly greater than any individual tour length.
+        Default tau = 1 is arbitrary initial value.
 
     Shorter tour ==> greater f_min
     Tau too large ==> P's fitness values 'pushed together'
@@ -455,8 +467,8 @@ def get_f_mins(P, tau=1):
 
 def roulette_wheel(P, probs):
     '''
-    Select parent from P using given probabilities
-    using roulette wheel approach
+    Select parent from P according to given probabilities
+        using roulette wheel approach.
     '''
     # divide wheel into proportional sectors
     sector_angles = [p * 360 for p in probs]
@@ -525,7 +537,7 @@ for i in range(pop_size):
     random.shuffle(individual) # shuffle cities visited in each tour
     P.append(individual) # add tour to population
 
-# init tau, fitness list, best and worst individuals
+# init tau, fitness list, best individual
 f_mins, tau = get_f_mins(P)
 best_fitness = max(f_mins)
 best_tour = P[f_mins.index(best_fitness)]
@@ -577,12 +589,15 @@ for it in range(max_it):
     if temp_best_fitness > best_fitness:
         best_fitness = temp_best_fitness
         best_tour = P[f_mins.index(best_fitness)] # keep best individual in memory
+
+        # keep track of iterations where best is updated
         last_best_update = it
         if first_best_update == 0:
             first_best_update = it
 
         # break if fit enough
-        if get_tour_length(best_tour) <= sat_tour_length:
+        sat_fitness = tau - sat_tour_length
+        if best_fitness >= sat_fitness:
             print("Tour fit enough\n")
             break
     
@@ -596,7 +611,7 @@ added_note += "Last best tour update at it = " + str(last_best_update) + ".\n"
 
 # output
 tour = best_tour
-tour_length = get_tour_length(tour)
+tour_length = best_tour_tau - best_fitness # tour length = tau - f_min
 
 ############ START OF SECTOR 10 (IGNORE THIS COMMENT)
 ############

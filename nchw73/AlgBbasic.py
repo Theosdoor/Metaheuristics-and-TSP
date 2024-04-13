@@ -157,7 +157,7 @@ def read_in_algorithm_codes_and_tariffs(alg_codes_file):
 ############
 ############ END OF SECTOR 0 (IGNORE THIS COMMENT)
 
-input_file = "AISearchfile042.txt"
+input_file = "AISearchfile175.txt"
 
 ############ START OF SECTOR 1 (IGNORE THIS COMMENT)
 ############
@@ -354,8 +354,8 @@ added_note = ""
 ############ END OF SECTOR 9 (IGNORE THIS COMMENT)
 
 # Ant Colony Optimisation
-timed = False
-time_limit = 3600 # seconds
+timed = True
+time_limit = 60 # seconds
 if timed:
     added_note += "Time limit = " + str(time_limit) + " seconds.\n"
 variation = "AS_rank" # AS, EAS, AS_rank
@@ -372,7 +372,7 @@ num_ants = num_cities # N
 
 # pheremone params
 alpha = 1 # pheromone influence - 1
-# beta = random.uniform(2, 5) # edge-distance influence - between 2 and 5
+# beta = random.uniform(2, 5) # edge-distance (local heuristic) influence - between 2 and 5
 beta = 5
 rho = 0.5 # pheromone evaporation rate - 0.5 for AS and EAS
 w = num_cities # weight - N for EAS (i.e. num. elite ants)
@@ -386,10 +386,14 @@ if variation == 'EAS' or variation == 'AS_rank':
     added_note += "w = " + str(w) + ".\n"
 
 class Ant:
-    def __init__(self, start_city) -> None:
-        # init tour with start city
+    def __init__(self, start_city=None) -> None:
+        # init tour with specific or random start city
+        if start_city is None:
+            start_city = random.randint(0, num_cities - 1)
+        self.id = start_city
         self.tour = [start_city]
         self.tour_length = 0
+
         # init tabu list for cities already visited by ant k
         # (forbidden cities F_k in pseudocode)
         self.visited = [start_city]
@@ -404,6 +408,12 @@ class Ant:
             if city not in self.visited:
                 unvisited.append(city)
         return unvisited
+    
+    def reset(self) -> None:
+        start_city = self.tour[0]
+        self.tour = [start_city]
+        self.tour_length = 0
+        self.visited = [start_city]
 
 # function to get tour length
 def get_tour_length(tour):
@@ -447,7 +457,7 @@ def nearest_neighbours(start_city=None):
 
         # get nearest unvisited city
         nearest = unvisited[0]
-        for city in unvisited:
+        for city in unvisited[1:]:
             if distances[city] < distances[nearest]:
                 nearest = city
     
@@ -457,15 +467,17 @@ def nearest_neighbours(start_city=None):
 
     return nn_tour
 
-# If num_cities is small, try all start cities for shortest nn tour
-# otherwise use random start city for nn tour
-# NOTE n < 200 takes less than 1 second to iterate all
-if num_cities < 200:
+# If num_cities is small or runtime not restricted,
+# generate nn tour starting from each city
+# otherwise create only r nn tours
+# NOTE n <= 180 takes less than 1 second to iterate all
+if num_cities < 200 or not timed:
     nn_tour = None
     nn_tour_length = float('inf')
     for i in range(num_cities):
         ith_tour = nearest_neighbours(start_city=i)
         ith_tour_length = get_tour_length(ith_tour)
+        # get best nn tour length
         if ith_tour_length < nn_tour_length:
             nn_tour_length = ith_tour_length
             nn_tour = ith_tour
@@ -481,28 +493,32 @@ elif variation == 'AS_rank':
 else:
     tau_0 = num_ants / nn_tour_length # AS heuristic (N / Lnn)
 
-tau = [[tau_0] * num_cities for _ in range(num_cities)]
+# pheromone matrix
+tau = [[tau_0] * num_cities for i in range(num_cities)]
 
 added_note += "tau_0 = " + str(tau_0) + ".\n"
 
 # init best tour & length
 best_tour = nn_tour
-best_tour_length = nn_tour_length
+# best_tour_length = nn_tour_length
+best_tour_length = float('inf')
+print("BEST LENGTH:", best_tour_length)
 
-print("NN tour length:", nn_tour_length)
-
-# specifically place one ant on each city at start
-ants = [Ant(i) for i in range(num_cities)]
+# place ants on cities
+ants = [Ant() for i in range(num_ants)] # randomly
+# ants = [Ant(i) for i in range(num_ants)] # specifically on each city (up to num_ants)
 
 # MAIN LOOP
 for t in range(max_it): # repeat for max_it iterations starting at t := 0
-    print("Time: " + str(t) + "/" + str(max_it) + ".")
-    # randomly place ants on cities at each subsequent iteration
-    if t > 0:
-        ants = [Ant(random.randint(0, num_cities - 1)) for _ in range(num_ants)]
+    if t % 10 == 0:
+        print("Time: " + str(t) + "/" + str(max_it) + ".")
 
     # for each ant
     for ant_k in ants:
+        # reset ant tour to start city if necessary
+        if t > 0:
+            ant_k.reset()
+
         # stochastically build a trail
         while len(ant_k.tour) < num_cities:
             # get current & unvisited cities
@@ -512,11 +528,12 @@ for t in range(max_it): # repeat for max_it iterations starting at t := 0
             # get probabilities for each unvisited city
             probabilities = [0] * num_cities
 
-            # calculate denominator first - same for all cities
+            # calculate denominator first (same for each city)
             denominator = 0
             for m in unvisited_cities:
                 denominator += (tau[current_city][m] ** alpha) * (eta(current_city, m) ** beta)
                 
+            # calculate numerator and probability of visiting each city
             for j in unvisited_cities:
                 numerator = (tau[current_city][j] ** alpha) * (eta(current_city, j) ** beta)
                 probabilities[j] = numerator / denominator
@@ -531,7 +548,7 @@ for t in range(max_it): # repeat for max_it iterations starting at t := 0
     # sort list of ants by tour length
     ants = sorted(ants, key=lambda ant: ant.tour_length)
 
-    # update best tour if improved tour found
+    # update best if improved tour found
     if ants[0].tour_length < best_tour_length:
         best_tour_length = ants[0].tour_length
         best_tour = ants[0].tour
@@ -550,12 +567,15 @@ for t in range(max_it): # repeat for max_it iterations starting at t := 0
     # AS/EAS - for each ant, deposit on all edges in tour
     # AS_rank - only deposit on w-1 shortest tours
     if variation == 'AS_rank':
-        ants = ants[:w-1]
-        print([ant.tour_length for ant in ants])
+        depositing_ants = ants[:w-1]
+        if t % 1 == 0:
+            print([ant.tour_length for ant in depositing_ants])
+    else:
+        depositing_ants = ants
 
-    for i in range(len(ants)):
-        tour = ants[i].tour
-        tour_length = ants[i].tour_length
+    for i in range(len(depositing_ants)):
+        tour = depositing_ants[i].tour
+        tour_length = depositing_ants[i].tour_length
 
         # for each city j deposit pheremone on edge to next city in tour
         for j in range(num_cities - 1):
@@ -578,7 +598,7 @@ for t in range(max_it): # repeat for max_it iterations starting at t := 0
     
     # break if time limit reached
     if timed and (time.time() - start_time > time_limit):
-        print("Time's up!\n")
+        print("Time's up! t = " + str(t))
         break
 
     # break if 150 iterations without improvement
@@ -593,6 +613,8 @@ added_note += "Last best tour update at t = " + str(last_best_update) + ".\n"
 # output
 tour = best_tour
 tour_length = best_tour_length
+print("Final:", best_tour_length)
+exit()
 
 ############ START OF SECTOR 10 (IGNORE THIS COMMENT)
 ############
