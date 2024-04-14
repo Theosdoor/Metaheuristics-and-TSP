@@ -157,7 +157,7 @@ def read_in_algorithm_codes_and_tariffs(alg_codes_file):
 ############
 ############ END OF SECTOR 0 (IGNORE THIS COMMENT)
 
-input_file = "AISearchfile535.txt"
+input_file = "AISearchfile100.txt"
 
 ############ START OF SECTOR 1 (IGNORE THIS COMMENT)
 ############
@@ -353,9 +353,9 @@ added_note = ""
 ############
 ############ END OF SECTOR 9 (IGNORE THIS COMMENT)
 
-# Genetic algorithm
-timed = False
-time_limit = 50 # seconds
+# Genetic algorithm ENHANCED
+timed = True
+time_limit = 60 # seconds
 if timed:
     added_note += "Time limit = " + str(time_limit) + " seconds.\n"
 
@@ -456,7 +456,7 @@ def crossover(X, Y):
 
     O(n), n = num_cities
 
-    REFERENCE
+    REFERENCE (pseudocode & explanation)
     ---------
     Ahmed, Zakir (2010)
     Genetic Algorithm for the Traveling Salesman Problem using Sequential Constructive Crossover Operator.
@@ -517,7 +517,7 @@ def mutate(Z):
 # function for nearest neighbour tour & length
 def nearest_neighbours(start_city=None):
     '''
-    Basic nearest neighbour search for shortest tour,
+    Basic greedy search for shortest tour, 
         starting from random or specified city.
 
     Complexity: O(n^2), n = num_cities
@@ -533,6 +533,7 @@ def nearest_neighbours(start_city=None):
     unvisited.remove(nn_tour[0])
 
     # while tour not complete
+    nn_length = 0
     while len(nn_tour) < num_cities:
         # get distances from current city
         current = nn_tour[-1]
@@ -546,30 +547,33 @@ def nearest_neighbours(start_city=None):
     
         # add nearest to tour and remove from univisted list
         nn_tour.append(nearest)
+        nn_length += distances[nearest]
         unvisited.remove(nearest)
 
-    return nn_tour
+    # add distance back to start
+    nn_length += dist_matrix[nn_tour[-1]][nn_tour[0]]
 
+    return nn_tour, nn_length
+
+## generate tours using nearest neighbours for HEURISTIC: better nn tour => better initial P
 # If num_cities is small or runtime not restricted,
 # generate nn tour starting from each city
-# otherwise create only r nn tours
+# otherwise create only r nn tours to save computation time
 # NOTE num_cities <= 180 takes less than 1 second to generate all
-m = 200
+m = 180 # threshold for generating all nn tours
 r = 70 # for large city sets > size m, generate only r nn tours
 nn_tours = {}
 if num_cities <= m or not timed:
     # create nn tour from every start city
     for i in range(num_cities):
-        ith_tour = nearest_neighbours(start_city=i)
-        ith_tour_length = get_tour_length(ith_tour)
+        ith_tour, ith_tour_length = nearest_neighbours(start_city=i)
         nn_tours[ith_tour_length] = ith_tour
 else:
     # get list of r unique start cities
     start_cities = random.sample(range(num_cities), r)
     # create r nn tours
     for i in range(r):
-        ith_tour = nearest_neighbours(start_city=start_cities[i])
-        ith_tour_length = get_tour_length(ith_tour)
+        ith_tour, ith_tour_length = nearest_neighbours(start_city=start_cities[i])
         nn_tours[ith_tour_length] = ith_tour
 
 # get sorted list of nn tour lenghts
@@ -701,7 +705,6 @@ for it in range(max_it):
     # break if time limit reached
     if timed and (time.time() - start_time > time_limit):
         print("Time's up! it:", it)
-        max_it = it # TODO remove?
         break
 
 added_note += "First best tour update at it = " + str(first_best_update) + ".\n"

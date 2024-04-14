@@ -1,0 +1,12 @@
+USER = nchw73 (Theo Farrell),
+ALGORITHM CODE = AC, NAME OF CITY-FILE = AISearchfile100.txt,
+SIZE = 100, TOUR LENGTH = 13218,
+18,49,95,70,47,7,22,0,75,43,32,38,20,77,40,93,27,39,45,50,96,91,65,55,16,31,41,64,21,86,85,82,12,89,62,42,83,34,87,69,11,3,58,99,97,61,33,80,92,73,88,5,28,84,57,17,67,94,53,56,13,71,25,24,98,76,63,48,37,30,59,72,26,14,90,19,66,36,46,51,54,29,15,4,6,1,81,68,60,23,8,2,74,35,78,9,52,10,44,79,
+NOTE = alpha = 1, beta = 5, rho = 0.6, w = 6tau_0 = 0.00018225559524677408.
+
+First best tour update at t = 0.
+Last best tour update at t = 0.
+
+The parameter values are 'max_it' = 600 and 'num_ants' = 100.
+RUN-TIME = 250.2 seconds.
+CERTIFICATE = 3848.

@@ -157,7 +157,7 @@ def read_in_algorithm_codes_and_tariffs(alg_codes_file):
 ############
 ############ END OF SECTOR 0 (IGNORE THIS COMMENT)
 
-input_file = "AISearchfile535.txt"
+input_file = "AISearchfile100.txt"
 
 ############ START OF SECTOR 1 (IGNORE THIS COMMENT)
 ############
@@ -353,9 +353,9 @@ added_note = ""
 ############
 ############ END OF SECTOR 9 (IGNORE THIS COMMENT)
 
-# Genetic algorithm
-timed = False
-time_limit = 120 # seconds
+# Genetic algorithm BASIC
+timed = True
+time_limit = 60 # seconds
 if timed:
     added_note += "Time limit = " + str(time_limit) + " seconds.\n"
 
@@ -383,7 +383,7 @@ def get_tour_length(tour):
     '''
     # sum distances between each city in tour
     length = 0
-    for i in range(num_cities - 1):
+    for i in range(len(tour) - 1):
         length += dist_matrix[tour[i]][tour[i + 1]]
     # if tour is complete, add dist back to start city
     if len(tour) == num_cities:
@@ -603,7 +603,7 @@ for it in range(max_it):
     
     # break if time limit reached
     if timed and (time.time() - start_time > time_limit):
-        print("Time's up!\n")
+        print("Time's up! it:", it)
         break
 
 added_note += "First best tour update at it = " + str(first_best_update) + ".\n"

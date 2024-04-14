@@ -1,0 +1,15 @@
+USER = nchw73 (Theo Farrell),
+ALGORITHM CODE = AC, NAME OF CITY-FILE = AISearchfile048.txt,
+SIZE = 48, TOUR LENGTH = 12827,
+13,14,47,22,28,37,9,44,0,30,19,40,42,24,11,3,17,8,18,45,31,36,4,5,20,1,23,7,41,43,6,12,10,34,39,35,15,21,46,2,16,38,33,29,25,32,26,27,
+NOTE = Time limit = 60 seconds.
+ACO algorithm with MAX-MIN.
+alpha = 1, beta = 2, rho = 0.9.
+tau_0 = 0.0006591088847877671.
+
+First best tour update at t = 17.
+Last best tour update at t = 59.
+
+The parameter values are 'max_it' = 600 and 'num_ants' = 48.
+RUN-TIME = 38.0 seconds.
+CERTIFICATE = 1424.
