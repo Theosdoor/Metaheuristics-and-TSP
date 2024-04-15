@@ -177,9 +177,10 @@ path_for_city_files = os.path.join("..", "city-files")
 ############ END OF SECTOR 2 (IGNORE THIS COMMENT)
 
 ############ START OF SECTOR 3 (IGNORE THIS COMMENT)
-if os.path.isfile(path_for_city_files + "/" + input_file):
+path_to_input_file = os.path.join(path_for_city_files, input_file)
+if os.path.isfile(path_to_input_file):
     ord_range = [[32, 126]]
-    file_string = read_file_into_string(path_for_city_files + "/" + input_file, ord_range)
+    file_string = read_file_into_string(path_to_input_file, ord_range)
     file_string = remove_all_spaces(file_string)
     print("I have found and read the input file " + input_file + ":")
 else:
@@ -353,12 +354,16 @@ added_note = ""
 ############
 ############ END OF SECTOR 9 (IGNORE THIS COMMENT)
 
+
 # Ant Colony Optimisation ENHANCED
-timed = False
-time_limit = 60 # seconds
+timed = True
+time_limit = 59 # seconds
 if timed:
     added_note += "Time limit = " + str(time_limit) + " seconds.\n"
-variation = ''
+variation = 'MMAS' # AS_rank, MMAS (MAX-MIN Ant System)
+# MMAS gives just as good results as AS_rank, but MMAS converges faster
+# due to 2-opt, tau max/min limits, and faster due to candidate list
+added_note += variation + ' ACO algorithm\n'
 
 # for added NOTE
 first_best_update = 0 # iteration of first best tour update
@@ -368,9 +373,9 @@ last_best_update = 0 # iteration of last best tour update
 max_it = 600 # max number of iterations
 num_ants = num_cities # N - recommended = num_cities
 
-# pheremone params (SAME AS BASIC??)
+# pheremone params (SAME AS BASIC)
 alpha = 1 # pheromone influence - 1
-beta = 5 # edge-distance (local heuristic) influence - recommended = 2
+beta = 2 # edge-distance (local heuristic) influence - recommended = 2
 rho = 0.6 # pheromone evaporation rate - recommended = 0.6 -> 0.9
 w = 6 # weight - for AS_rank
 
@@ -379,19 +384,21 @@ added_note += "alpha = " + str(alpha) + ", beta = " + str(beta) + ", rho = " + s
 # ENHANCED-SPECIFIC PARAMS
 use_candidate_list = True # whether to use candidate list - reduced number of unvisited cities considered when ant k moves
 cl_size = 20 # candidate list size - recommended between 10 and 30
-two_opt_limit = 8 # Since 2-opt is expensive, limit the search to this many nearest neighbours of the city
-p_best = 0.05 # probability that an ants tour exactly = trail w/ most pheremone
-delta = 0 # pheromone trail smoothing (PTS) factor. 1 = reinitialisation of pheremone to tau_max, 0 = no PTS
+two_opt_limit = 4 # Since 2-opt is expensive, limit the search to this many nearest neighbours of the city
+p_best = 0.05 # probability that an ants tour exactly = the trail with most pheremone
+
+# pheromone trail smoothing (PTS) factor. 1 = resetting entire pheremone matrix to tau_max, 0 = no PTS
+delta = 0 # NOTE not used here, hence not in the proforma, but is useful for experimentation
 
 class City:
     def __init__(self, city):
         self.city = city
 
-        # get list of other cities ordered according to distance from self.city
+        # get list of adjacent cities ordered according to distance from self.city
         self.nearest_adj = sorted(list(range(num_cities)), key=lambda c: dist_matrix[self.city][c])
         self.nearest_adj.remove(self.city)
 
-        # init candidate list of with nearest neighbours
+        # init candidate list with nearest neighbours
         self.cand_list = self.nearest_adj[:cl_size]
     
     def get_successor(self, tour):
@@ -410,34 +417,26 @@ class City:
         
         Given city s, such that edge from current city --> s has most pheromone,
         and given city b, such that curent city --> b is edge in best tour found so far:
-        If s and b are not in the candidate list, put them at the front.
+            If s and b are not in the candidate list, put them at the front.
 
-        Size of the list is maintained by dropping the last in the list if need be.
+        (Size of the list is maintained by dropping the last in the list if need be.)
 
-        REFERENCE (explaination & pseudocode)
-        ---------
-        Hassan Ismkhan,
-        Effective heuristics for ant colony optimization to handle large-scale problems,
-        Swarm and Evolutionary Computation,
-        Volume 32,
-        2017,
-        Pages 140-149,
-        ISSN 2210-6502,
-        https://doi.org/10.1016/j.swevo.2016.06.006.
+        Note: this is my own implementation of Ismkhan's (2017) description
+            of a 'dynamic' candidate list based on pheromone and best tour found so far.
         '''
         # get edge with most pheromone from current city
         max_pher = max(tau[self.city])
         stinkiest_neighbour = tau[self.city].index(max_pher)
 
-        # move to front of cand list while maintaining size
+        # put in cand list if not already
         if stinkiest_neighbour not in self.cand_list:
-            self.cand_list.pop() # if not in cand list already, remove last one
+            self.cand_list.pop() # to maintain size of cand list, remove last element
             self.cand_list = [stinkiest_neighbour] + self.cand_list
 
         # get successor to city in best tour found so far
         succ = self.get_successor(best_tour)
 
-        # move to front of cand list while maintaining size
+        # put in cand list if not already
         if succ in self.cand_list:
             self.cand_list.pop()
             self.cand_list = [succ] + self.cand_list
@@ -464,6 +463,7 @@ class Ant:
         self.unvisited.remove(city)
     
     def reset(self):
+        # reinit ant with same start city as current tour
         start_city = self.tour[0]
         self.tour = [start_city]
         self.tour_length = 0
@@ -473,6 +473,11 @@ class Ant:
 
 # function to get tour length
 def get_tour_length(tour):
+    '''
+    Returns length of given partial/complete tour.
+
+    O(n), n = cities in tour (= num_cities if tour complete)
+    '''
     # sum distances between each city in tour
     length = 0
     for i in range(len(tour) - 1):
@@ -489,9 +494,10 @@ def eta(i, j):
 
 def two_opt(ant, checklist):
     '''
-    Greedy local search to improve tour length.
+    2-opt local search to improve tour length by reversing a segment of the tour.
 
-    Adapted from https://www.sciencedirect.com/science/article/pii/S1568494622001302#sec3
+    Note: this is my own implementation of Skinderowicz' (2022) description & pseudocode
+        of a 2-opt local search heuristic using a checklist.
     '''
     tour = ant.tour.copy()
 
@@ -519,7 +525,7 @@ def two_opt(ant, checklist):
                     gain = cost_old - cost_new
                     move = [a, a_succ, b, b_succ]
         
-        # consider predecessors
+        # consider predecessors similarly
         for b in nn_list:
             b_pred = cities[b].get_predecessor(tour)
             # if a -> b shorter edge than current a_pred -> a
@@ -535,16 +541,15 @@ def two_opt(ant, checklist):
             # reverse a section of tour between x and y so x next to y and w next to z
             sect_start = tour.index(x) # mark start of section at x
             sect_end = (tour.index(y)+1) % num_cities # mark end of section just after y
-            # if slice start appears after the end in tour, wrap around list
+            # if sect_start appears after sect_end in tour, wrap around list
             if sect_start > sect_end:
                 section = tour[sect_start:] + tour[:sect_end]
-                section.reverse()
-                # add section to RHS of tour
+                # add section to RHS of tour in reverse
                 for i in range(sect_start, num_cities):
-                    tour[i] = section.pop(0)
-                # add section to LHS of tour
+                    tour[i] = section.pop()
+                # add section to LHS of tour in reverse
                 for i in range(0, sect_end):
-                    tour[i] = section.pop(0)
+                    tour[i] = section.pop()
             # otherwise slice tour as normal
             else:
                 prefix = tour[:sect_start]
@@ -601,67 +606,43 @@ def nearest_neighbours(start_city=None):
 
     return nn_tour, nn_length
 
-## generate tours using nearest neighbours for HEURISTIC: better nn tour => better tau_0
-# If num_cities is small or runtime not restricted,
-# generate nn tour starting from each city
-# otherwise create only r nn tours to save computation time
-# NOTE num_cities <= 180 takes less than 1 second to generate all
-m = 180 # threshold for generating all nn tours
-r = 70 # for large city sets > size m, generate only r nn tours
-nn_tours = {}
-if num_cities <= m or not timed:
-    # create nn tour from every start city
-    for i in range(num_cities):
-        ith_tour, ith_tour_length = nearest_neighbours(start_city=i)
-        nn_tours[ith_tour_length] = ith_tour
-else:
-    # get list of r unique start cities
-    start_cities = random.sample(range(num_cities), r)
-    # create r nn tours
-    for i in range(r):
-        ith_tour, ith_tour_length = nearest_neighbours(start_city=start_cities[i])
-        nn_tours[ith_tour_length] = ith_tour
+# get nn tour from random city for heurstic info
+nn_tour, nn_tour_length = nearest_neighbours()
 
-# init best tour & length from generated nn tours
-global_best_length = min(nn_tours.keys())
-global_best = nn_tours[global_best_length]
-print("BEST LENGTH:", global_best_length)
+# only deposit pheromone along the source tour for MMAS
+# init to nn_tour (best found so far)
+source_tour = nn_tour
 
-# only deposit pheromone along the source tour for MAX-MIN
-source_tour = global_best
-
-# max and min pheremone allowed on a particular edge - for MAX-MIN AS
-tau_max = 1 / (global_best_length * (1 - rho))
+# MMAS - max and min pheremone allowed on a particular edge
+# values are from original paper https://www.sciencedirect.com/science/article/pii/S0167739X00000431?via%3Dihub#SEC16
+tau_max = 1 / (nn_tour_length * (1 - rho)) # Tau_max is estimate of asymptotically maximum value of pheromone that could be deposited on an edge
 avg = num_cities / 2 # average number of unvisited edges considered while calculating probabilities for trail
 tau_min = (tau_max * (1 - p_best)**(1 / num_cities)) / (avg - 1) * p_best**(1 / num_cities)
 # tau_min > 0 means always possible to visit an edge
 
 # init pheromone matrix tau, with initial deposit tau_0 on each edge
 # tau_0 = (0.5 * w * (w-1)) / rho * nn_tour_length # AS_rank heuristic
-tau_0 = tau_max # MAX-MIN heurstic 
+tau_0 = tau_max # MMAS heurstic
 # Note: after first iteration, all edges will be capped to tau_max.
-#   this encourages unrestricted exploration in first iteration
+# (encourages initial unrestricted exploration)
 
 # pheromone matrix
 tau = [[tau_0] * num_cities for i in range(num_cities)]
-
-added_note += "tau_0 = " + str(tau_0) + ".\n"
 
 # init list of City class objects to reference city data (candidate lists, etc.)
 # NOTE purely for reference, not intended to be modified
 cities = [City(i) for i in range(num_cities)]
 
+# init global best tour & length
+global_best = []
+global_best_length = float('inf')
+
 # place ants on cities
 ants = [Ant() for i in range(num_ants)] # randomly
 # ants = [Ant(i) for i in range(num_ants)] # specifically on each city (up to num_ants)
 
-global_best_length = float('inf')
-
 # MAIN LOOP
 for t in range(max_it): # repeat for max_it iterations starting at t := 0
-    if t % 10 == 0:
-        print("Time: " + str(t) + "/" + str(max_it) + ".")
-
     # for each ant
     for ant_k in ants:
         # reset ant tour to start city if necessary
@@ -669,14 +650,14 @@ for t in range(max_it): # repeat for max_it iterations starting at t := 0
             ant_k.reset()
 
         ls_checklist = [] # to save time, only apply local search to edges not in best tour
-        # (since will have already done local search on that tour!)
+        # (since have already done local search on that tour! (besides original nn tour))
 
         # stochastically build a trail
         while len(ant_k.tour) < num_cities:
             # get current city
             current_city = ant_k.tour[-1]
 
-            # if using candidate list, reduce number of cities considered for ant's next move
+            # if using candidate list, reduce num cities considered for ant's next move
             if use_candidate_list:
                 cand_list = cities[current_city].cand_list
 
@@ -694,6 +675,11 @@ for t in range(max_it): # repeat for max_it iterations starting at t := 0
                             next_city = j
                     # visit next city and skip to next ant move
                     ant_k.visit_city(next_city)
+
+                    # if edge not in source solution, add to checklist for 2-opt
+                    succ = cities[current_city].get_successor(source_tour)
+                    if next_city != succ:
+                        ls_checklist.append(next_city)
                     continue
             # if not using candidate list, consider all unvisited cities for next move
             else:
@@ -729,7 +715,6 @@ for t in range(max_it): # repeat for max_it iterations starting at t := 0
 
     # sort list of ants by tour length
     ants = sorted(ants, key=lambda ant: ant.tour_length)
-    # print(set([ant.tour_length for ant in ants[:w]]))
 
     # update best if improved tour found
     iter_best = ants[0].tour
@@ -737,7 +722,7 @@ for t in range(max_it): # repeat for max_it iterations starting at t := 0
     if iter_best_length < global_best_length:
         global_best_length = ants[0].tour_length
         global_best = ants[0].tour
-        print("BEST LENGTH:", global_best_length)
+        # print("BEST LENGTH:", global_best_length)
 
         # update tau max and min
         tau_max = 1 / (global_best_length * (1 - rho))
@@ -762,6 +747,7 @@ for t in range(max_it): # repeat for max_it iterations starting at t := 0
             if tau[i][j] < tau_min:
                 tau[i][j] = tau_min
 
+    # MMAS only
     # global_best_freq (gbf) = x means that every x iters, global best ant is allowed to deposit
     # scheduled changes to global_best_freq
     # note: [a,b] means a < t <= b
@@ -772,36 +758,27 @@ for t in range(max_it): # repeat for max_it iterations starting at t := 0
         if t in range(bin[0], bin[1]):
             global_best_freq = pher_schedule[bin]
 
-    # set source solution to be current best in iteration or global best
+    # set source to be current best in iteration or global best
     if global_best_freq == 0:
         source_tour = iter_best
         source_length = iter_best_length
     else:
-        # probabilitically choose global best or best in current iteration to deposit
+        # probabilitically choose global best or best within current iteration to deposit
         if random.random() <= 1 / global_best_freq:
-            # risks reducing exploration of search space
+            # note: risks worse exploration of search space & getting trapped in local minima
             source_tour = global_best
             source_length = global_best_length
         else:
-            # risks reducing exploitation of best tours found so far to find better ones
+            # note: risks taking longer to converge on a better tour
             source_tour = iter_best
             source_length = iter_best_length
 
-    # deposit only from source soln - MAX-MIN AS
-    for j in range(num_cities - 1):
-        tau[source_tour[j]][source_tour[j + 1]] += (1 / source_length)
-        # ensure pheromone respects max/min limits
-        if tau[source_tour[j]][source_tour[j + 1]] > tau_max:
-                tau[source_tour[j]][source_tour[j + 1]] = tau_max
-    # deposit on edge back to start city
-    tau[source_tour[num_cities - 1]][source_tour[0]] += (1 / source_length)
-    if tau[source_tour[num_cities - 1]][source_tour[0]] > tau_max:
-        tau[source_tour[num_cities - 1]][source_tour[0]] = tau_max
-
-    # pheromone trail smoothing (PTS) - can use for any variation
-    for i in range(num_cities):
-        for j in range(num_cities):
-            tau[i][j] = tau[i][j] + delta * (tau_max - tau[i][j])
+    # MMAS AS - deposit on all edges in source tour
+    if variation == 'MMAS':
+        for j in range(num_cities - 1):
+            tau[source_tour[j]][source_tour[j + 1]] += (1 / source_length)
+        # deposit on edge back to start city
+        tau[source_tour[num_cities - 1]][source_tour[0]] += (1 / source_length)
 
     # AS_rank - only deposit on w-1 shortest tours
     if variation == 'AS_rank':
@@ -822,21 +799,29 @@ for t in range(max_it): # repeat for max_it iterations starting at t := 0
             tau[global_best[j]][global_best[j + 1]] += w * (1 / global_best_length)
         tau[global_best[num_cities - 1]][global_best[0]] += w * (1 / global_best_length)
 
+    for i in range(num_cities):
+        for j in range(num_cities):
+            # ensure pheremone respects max limit
+            if tau[i][j] > tau_max:
+                tau[i][j] = tau_max
+
+            # pheromone trail smoothing (PTS) - can use for any variation
+            # delta = 0 ==> no PTS, delta = 1 ==> resetting edges to tau_max
+            tau[i][j] = tau[i][j] + delta * (tau_max - tau[i][j])
+
     # update city candidate list
     for city in cities:
         city.update_cand_list(global_best, tau)
 
     # break if time limit reached
     if timed and (time.time() - start_time > time_limit):
-        print("Time's up! t = " + str(t))
         break
 
-    # TODO DELETE?
+    ## Stagnation (uncommend code below to use as termination condition)
     # break if 150 iterations without improvement
-    # and top w ants have same tour length
-    if t - last_best_update > 100 and len(set([ant.tour_length for ant in ants[:w]])) == 1 and t > 300:
-        print("Stagnation!\n")
-        break
+    # and top w ants have same tour length 
+    # if t - last_best_update > 150 and len(set([ant.tour_length for ant in ants[:w]])) == 1:
+    #     break
 
 added_note += "\nFirst best tour update at t = " + str(first_best_update) + ".\n"
 added_note += "Last best tour update at t = " + str(last_best_update) + ".\n"
@@ -844,6 +829,7 @@ added_note += "Last best tour update at t = " + str(last_best_update) + ".\n"
 # output
 tour = global_best
 tour_length = global_best_length
+
 
 ############ START OF SECTOR 10 (IGNORE THIS COMMENT)
 ############

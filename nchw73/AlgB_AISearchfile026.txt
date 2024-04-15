@@ -1,0 +1,12 @@
+USER = nchw73 (Theo Farrell),
+ALGORITHM CODE = AC, NAME OF CITY-FILE = AISearchfile026.txt,
+SIZE = 26, TOUR LENGTH = 1473,
+6,12,7,4,16,0,5,17,18,3,2,13,23,8,24,14,11,9,20,21,1,15,19,22,10,25,
+NOTE = MMAS ACO algorithm
+alpha = 1, beta = 2, rho = 0.6, w = 6
+First best tour update at t = 0.
+Last best tour update at t = 0.
+
+The parameter values are 'max_it' = 600 and 'num_ants' = 26.
+RUN-TIME = 10.6 seconds.
+CERTIFICATE = 912.

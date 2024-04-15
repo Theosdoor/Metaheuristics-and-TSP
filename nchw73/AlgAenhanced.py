@@ -177,9 +177,10 @@ path_for_city_files = os.path.join("..", "city-files")
 ############ END OF SECTOR 2 (IGNORE THIS COMMENT)
 
 ############ START OF SECTOR 3 (IGNORE THIS COMMENT)
-if os.path.isfile(path_for_city_files + "/" + input_file):
+path_to_input_file = os.path.join(path_for_city_files, input_file)
+if os.path.isfile(path_to_input_file):
     ord_range = [[32, 126]]
-    file_string = read_file_into_string(path_for_city_files + "/" + input_file, ord_range)
+    file_string = read_file_into_string(path_to_input_file, ord_range)
     file_string = remove_all_spaces(file_string)
     print("I have found and read the input file " + input_file + ":")
 else:
@@ -353,9 +354,10 @@ added_note = ""
 ############
 ############ END OF SECTOR 9 (IGNORE THIS COMMENT)
 
+
 # Genetic algorithm ENHANCED
 timed = True
-time_limit = 60 # seconds
+time_limit = 59 # seconds
 if timed:
     added_note += "Time limit = " + str(time_limit) + " seconds.\n"
 
@@ -364,7 +366,7 @@ first_best_update = 0 # iteration of first best tour update
 last_best_update = 0 # iteration of last best tour update
 
 # define core parameters
-max_it = 1000 # max number of generations
+max_it = 2000 # max number of generations
 pop_size = 250 # |P|
 p_crossover = 0.9 # probability of crossover
 # p_mutation - small probability of mutation
@@ -390,7 +392,7 @@ sat_tour_length = 0 # tour length at which to stop and return best tour so far
 # define function for getting tour length
 def get_tour_length(tour):
     '''
-    Returns length of given tour.
+    Returns length of given partial/complete tour.
 
     O(n), n = cities in tour (= num_cities if tour complete)
     '''
@@ -456,7 +458,7 @@ def crossover(X, Y):
 
     O(n), n = num_cities
 
-    REFERENCE (pseudocode & explanation)
+    REFERENCE (pseudocode)
     ---------
     Ahmed, Zakir (2010)
     Genetic Algorithm for the Traveling Salesman Problem using Sequential Constructive Crossover Operator.
@@ -555,41 +557,26 @@ def nearest_neighbours(start_city=None):
 
     return nn_tour, nn_length
 
-## generate tours using nearest neighbours for HEURISTIC: better nn tour => better initial P
-# If num_cities is small or runtime not restricted,
-# generate nn tour starting from each city
-# otherwise create only r nn tours to save computation time
-# NOTE num_cities <= 180 takes less than 1 second to generate all
-m = 180 # threshold for generating all nn tours
-r = 70 # for large city sets > size m, generate only r nn tours
-nn_tours = {}
-if num_cities <= m or not timed:
-    # create nn tour from every start city
-    for i in range(num_cities):
-        ith_tour, ith_tour_length = nearest_neighbours(start_city=i)
-        nn_tours[ith_tour_length] = ith_tour
-else:
-    # get list of r unique start cities
-    start_cities = random.sample(range(num_cities), r)
-    # create r nn tours
-    for i in range(r):
-        ith_tour, ith_tour_length = nearest_neighbours(start_city=start_cities[i])
-        nn_tours[ith_tour_length] = ith_tour
-
-# get sorted list of nn tour lenghts
-nn_lengths = sorted(nn_tours.keys())
-
-# tour good enough if it is less than half the length of an nn tour
-sat_tour_length = 0.5 * nn_lengths[0]
-
 # generate initial population as follows:
+m = 0.95 # proportion of P to be nn tours, 0 < m < 1
+num_nn = round(m * pop_size)
+
+# get list of unique start cities
+# get sample if too many possible start cities for nn tours
+if num_cities > num_nn:
+    start_cities = random.sample(list(range(num_cities)), num_nn)
+else:
+    start_cities = list(range(num_cities)) # get all possible start cities
+    start_cities += random.choices(start_cities, k=num_nn - num_cities) # repeat some if necessary
+
+# init P
 P = []
 # fill with available nn tours in order from shortest to longest
-for i in range(len(nn_lengths)):
-    individual = nn_tours[nn_lengths[i]]
+for i in range(num_nn):
+    individual, _ = nearest_neighbours(start_cities[i])
     P.append(individual)
 # then fill remaining space with randomised tours
-for i in range(pop_size - len(nn_lengths)):
+for i in range(pop_size - num_nn):
     individual = list(range(num_cities)) # init tour: [0, 1, 2, ..., num_cities - 1]
     random.shuffle(individual) # shuffle cities visited in each tour
     P.append(individual)
@@ -599,17 +586,16 @@ f_mins, tau = get_f_mins(P)
 best_fitness = max(f_mins)
 best_tour = P[f_mins.index(best_fitness)]
 best_tour_tau = tau
-print("BEST LENGTH:", get_tour_length(best_tour))
+
+# tour good enough if it is less than half the length of best tour in initial population
+# (incl NN tours)
+sat_tour_length = 0.5 * get_tour_length(best_tour)
 
 # MAIN LOOP until:
 # certain number of iterations done or
 # some individual is fit enough or
 # time limit reached
 for it in range(max_it):
-    if it % 50 == 0:
-        print("it:", it, "/", max_it)
-        # print("BEST LENGTH:", get_tour_length(best_tour)) 
-
     new_P = []
 
     # get probabilities for parent selection
@@ -655,7 +641,6 @@ for it in range(max_it):
     if temp_best_fitness > best_fitness:
         best_fitness = temp_best_fitness
         best_tour = P[f_mins.index(best_fitness)] # keep best individual in memory
-        print("BEST LENGTH:", get_tour_length(best_tour))
 
         # keep track of iterations where best is updated
         last_best_update = it
@@ -665,7 +650,6 @@ for it in range(max_it):
         # break if fit enough
         sat_fitness = tau - sat_tour_length
         if best_fitness >= sat_fitness:
-            print("Tour fit enough\n")
             break
 
     # check if P homogeneous
@@ -688,23 +672,22 @@ for it in range(max_it):
     it_since_last_best = it - last_best_update # iterations since last update to best tour
     # increase to next p_mutation [p2, p3, ..]
     if (it_since_last_best > p2_thresh or homogeneous) and p_mutation < p2:
-        print("Increasing p_mutation to", p2, "...")
+        # print("Increasing p_mutation to", p2, "...")
         p_mutation = p2
     elif (it_since_last_best > p3_thresh) and p_mutation < p3:
-        print("Increasing p_mutation to", p3, "...")
+        # print("Increasing p_mutation to", p3, "...")
         p_mutation = p3
     elif (it_since_last_best > p4_thresh) and p_mutation < p4:
-        print("Increasing p_mutation to", p4, "...")
+        # print("Increasing p_mutation to", p4, "...")
         p_mutation = p4
     else:
         # reduce p_mutation if rate of improvement increases and P sufficiently diverse
         if p_mutation > p1 and (it_since_last_best < p2_thresh) and not homogeneous:
-            print("Reducing p_mutation...")
+            # print("Reducing p_mutation...")
             p_mutation = p1
 
     # break if time limit reached
     if timed and (time.time() - start_time > time_limit):
-        print("Time's up! it:", it)
         break
 
 added_note += "First best tour update at it = " + str(first_best_update) + ".\n"
@@ -713,6 +696,7 @@ added_note += "Last best tour update at it = " + str(last_best_update) + ".\n"
 # output
 tour = best_tour
 tour_length = best_tour_tau - best_fitness # tour length = tau - f_min
+
 
 ############ START OF SECTOR 10 (IGNORE THIS COMMENT)
 ############
