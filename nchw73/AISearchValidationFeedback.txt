@@ -1,4 +1,4 @@
-Feedback for user-ID nchw73 at Apr 15 17:05:01
+Feedback for user-ID nchw73 at Apr 15 17:21:00
 
 Throughout this validation, as many error messages as possible are returned in order to help you understand what might have gone wrong. However, note that sometimes a single error might lead to early termination of the validation process so that fixing this error results in more, as yet unseen, errors. So, the list of error messages might not be exhaustive but it's the best I can do!
 
@@ -52,11 +52,6 @@ The next part of this feedback states whether the proforma and the validation fe
 
 #####  Additional items submission
 #####   * AISearchProforma.pdf: submitted
-#####   * AISearchValidationFeedback.txt: not submitted
+#####   * AISearchValidationFeedback.txt: submitted
 
 Of course, the validation feedback file might be flagged as 'not submitted' as it should be this file!
-
-By the way, you have extraneous material in your folder 'nchw73' that should be removed.
-
-#####  Extraneous material:
-#####   * AlgBenhanced_AISearchfile100_Apr15170500.txt.

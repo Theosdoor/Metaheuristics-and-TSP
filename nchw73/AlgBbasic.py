@@ -372,8 +372,8 @@ num_ants = num_cities # N - recommended = num_cities
 
 # pheremone params
 alpha = 1 # pheromone influence - recommended = 1
-beta = 5 # edge-distance (local heuristic) influence - recommended between 2 and 5
-rho = 0.1 # pheromone evaporation rate - recommended = 0.5 for AS and EAS, 0.1 for AS_rank
+beta = 2 # edge-distance (local heuristic) influence - recommended between 2 and 5
+rho = 0.6 # pheromone evaporation rate - recommended = 0.5 for AS and EAS, 0.1 for AS_rank
 w = 6 # weight - recommended = num_ants for EAS (i.e. num. elite ants), 6 for AS_rank
 
 added_note += "alpha = " + str(alpha) + ", beta = " + str(beta) + ", rho = " + str(rho) + ".\n"

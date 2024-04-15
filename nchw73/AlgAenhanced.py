@@ -368,7 +368,6 @@ last_best_update = 0 # iteration of last best tour update
 # define core parameters
 max_it = 2000 # max number of generations
 pop_size = 250 # |P|
-p_crossover = 0.9 # probability of crossover
 # p_mutation - small probability of mutation
 # change dynamically if certain conditions met (see MAIN LOOP)
 # REQUIRE p1 < p2 < p3 < p4
@@ -609,13 +608,8 @@ for it in range(max_it):
         X = roulette_wheel(P, probs)
         Y = roulette_wheel(P, probs)
 
-        # with fixed probability crossover X, Y
-        k = random.random() # pick random probability (i.e. int between 0 and 1)
-        if k <= p_crossover:
-            Z1 = crossover(X, Y)
-        # if no crossover, keep parent
-        else:
-            Z1 = X
+        # crossover X, Y
+        Z1 = crossover(X, Y)
 
         # with small fixed probablity mutate Z1
         if random.random() <= p_mutation:

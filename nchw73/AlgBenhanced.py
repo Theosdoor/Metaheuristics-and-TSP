@@ -375,8 +375,8 @@ num_ants = num_cities # N - recommended = num_cities
 
 # pheremone params (SAME AS BASIC)
 alpha = 1 # pheromone influence - 1
-beta = 2 # edge-distance (local heuristic) influence - recommended = 2
-rho = 0.6 # pheromone evaporation rate - recommended = 0.6 -> 0.9
+beta = 2 # edge-distance (local heuristic) influence - recommended = 2 for MMAS
+rho = 0.6 # pheromone evaporation rate - recommended = 0.6 -> 0.9 for MMAS
 w = 6 # weight - for AS_rank
 
 added_note += "alpha = " + str(alpha) + ", beta = " + str(beta) + ", rho = " + str(rho) + ", w = " + str(w)
@@ -621,8 +621,8 @@ tau_min = (tau_max * (1 - p_best)**(1 / num_cities)) / (avg - 1) * p_best**(1 / 
 # tau_min > 0 means always possible to visit an edge
 
 # init pheromone matrix tau, with initial deposit tau_0 on each edge
-# tau_0 = (0.5 * w * (w-1)) / rho * nn_tour_length # AS_rank heuristic
-tau_0 = tau_max # MMAS heurstic
+tau_0 = (0.5 * w * (w-1)) / rho * nn_tour_length # AS_rank heuristic (same as AlgBbasic)
+# tau_0 = tau_max # MMAS heurstic
 # Note: after first iteration, all edges will be capped to tau_max.
 # (encourages initial unrestricted exploration)
 
