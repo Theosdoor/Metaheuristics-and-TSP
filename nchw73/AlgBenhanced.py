@@ -157,7 +157,7 @@ def read_in_algorithm_codes_and_tariffs(alg_codes_file):
 ############
 ############ END OF SECTOR 0 (IGNORE THIS COMMENT)
 
-input_file = "AISearchfile100.txt"
+input_file = "AISearchfile535.txt"
 
 ############ START OF SECTOR 1 (IGNORE THIS COMMENT)
 ############
@@ -356,7 +356,7 @@ added_note = ""
 
 
 # Ant Colony Optimisation ENHANCED
-timed = True
+timed = False
 time_limit = 59 # seconds
 if timed:
     added_note += "Time limit = " + str(time_limit) + " seconds.\n"
@@ -371,7 +371,7 @@ last_best_update = 0 # iteration of last best tour update
 
 # define core parameters (SAME AS BASIC)
 max_it = 600 # max number of iterations
-num_ants = num_cities # N - recommended = num_cities
+num_ants = 2*num_cities # N - recommended = num_cities
 
 # pheremone params (SAME AS BASIC)
 alpha = 1 # pheromone influence - 1
@@ -388,7 +388,7 @@ two_opt_limit = 4 # Since 2-opt is expensive, limit the search to this many near
 p_best = 0.05 # probability that an ants tour exactly = the trail with most pheremone
 
 # pheromone trail smoothing (PTS) factor. 1 = resetting entire pheremone matrix to tau_max, 0 = no PTS
-delta = 0 # NOTE not used here, hence not in the proforma, but is useful for experimentation
+delta = 0.1 # NOTE not used here, hence not in the proforma, but is useful for experimentation
 
 class City:
     def __init__(self, city):
@@ -715,6 +715,7 @@ for t in range(max_it): # repeat for max_it iterations starting at t := 0
 
     # sort list of ants by tour length
     ants = sorted(ants, key=lambda ant: ant.tour_length)
+    print(set([ant.tour_length for ant in ants[:w]]))
 
     # update best if improved tour found
     iter_best = ants[0].tour
@@ -722,7 +723,7 @@ for t in range(max_it): # repeat for max_it iterations starting at t := 0
     if iter_best_length < global_best_length:
         global_best_length = ants[0].tour_length
         global_best = ants[0].tour
-        # print("BEST LENGTH:", global_best_length)
+        print("BEST LENGTH:", global_best_length)
 
         # update tau max and min
         tau_max = 1 / (global_best_length * (1 - rho))
@@ -805,10 +806,6 @@ for t in range(max_it): # repeat for max_it iterations starting at t := 0
             if tau[i][j] > tau_max:
                 tau[i][j] = tau_max
 
-            # pheromone trail smoothing (PTS) - can use for any variation
-            # delta = 0 ==> no PTS, delta = 1 ==> resetting edges to tau_max
-            tau[i][j] = tau[i][j] + delta * (tau_max - tau[i][j])
-
     # update city candidate list
     for city in cities:
         city.update_cand_list(global_best, tau)
@@ -817,11 +814,17 @@ for t in range(max_it): # repeat for max_it iterations starting at t := 0
     if timed and (time.time() - start_time > time_limit):
         break
 
-    ## Stagnation (uncommend code below to use as termination condition)
+    ## Stagnation (might be sensible to use as termination condition)
     # break if 150 iterations without improvement
     # and top w ants have same tour length 
+    if len(set([ant.tour for ant in ants[:w]])) == 1:
     # if t - last_best_update > 150 and len(set([ant.tour_length for ant in ants[:w]])) == 1:
-    #     break
+        for i in range(num_cities):
+            for j in range(num_cities):
+                # pheromone trail smoothing (PTS) - can use for any variation
+                # delta = 0 ==> no PTS, delta = 1 ==> resetting edges to tau_max
+                tau[i][j] = tau[i][j] + delta * (tau_max - tau[i][j])
+        # break # terminate when stagnation reached
 
 added_note += "\nFirst best tour update at t = " + str(first_best_update) + ".\n"
 added_note += "Last best tour update at t = " + str(last_best_update) + ".\n"
