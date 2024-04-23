@@ -817,7 +817,7 @@ for t in range(max_it): # repeat for max_it iterations starting at t := 0
     ## Stagnation (might be sensible to use as termination condition)
     # break if 150 iterations without improvement
     # and top w ants have same tour length 
-    if len(set([ant.tour for ant in ants[:w]])) == 1:
+    if t - last_best_update > 10 and len(set([ant.tour for ant in ants[:w]])) == 1:
     # if t - last_best_update > 150 and len(set([ant.tour_length for ant in ants[:w]])) == 1:
         for i in range(num_cities):
             for j in range(num_cities):
