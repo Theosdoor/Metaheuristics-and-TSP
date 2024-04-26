@@ -371,12 +371,12 @@ last_best_update = 0 # iteration of last best tour update
 
 # define core parameters (SAME AS BASIC)
 max_it = 600 # max number of iterations
-num_ants = 2*num_cities # N - recommended = num_cities
+num_ants = num_cities # N - recommended = num_cities
 
 # pheremone params (SAME AS BASIC)
 alpha = 1 # pheromone influence - 1
 beta = 2 # edge-distance (local heuristic) influence - recommended = 2 for MMAS
-rho = 0.6 # pheromone evaporation rate - recommended = 0.6 -> 0.9 for MMAS
+rho = 0.9 # pheromone evaporation rate - recommended = 0.6 -> 0.9 for MMAS
 w = 6 # weight - for AS_rank
 
 added_note += "alpha = " + str(alpha) + ", beta = " + str(beta) + ", rho = " + str(rho) + ", w = " + str(w)
@@ -389,6 +389,7 @@ p_best = 0.05 # probability that an ants tour exactly = the trail with most pher
 
 # pheromone trail smoothing (PTS) factor. 1 = resetting entire pheremone matrix to tau_max, 0 = no PTS
 delta = 0.1 # NOTE not used here, hence not in the proforma, but is useful for experimentation
+last_pts = 0 # last iteration PTS was applied
 
 class City:
     def __init__(self, city):
@@ -817,14 +818,16 @@ for t in range(max_it): # repeat for max_it iterations starting at t := 0
     ## Stagnation (might be sensible to use as termination condition)
     # break if 150 iterations without improvement
     # and top w ants have same tour length 
-    if t - last_best_update > 10 and len(set([ant.tour for ant in ants[:w]])) == 1:
+    if len(set([ant.tour_length for ant in ants[:w]])) == 1 and t - last_best_update > 20 and t - last_pts > 50:
     # if t - last_best_update > 150 and len(set([ant.tour_length for ant in ants[:w]])) == 1:
         for i in range(num_cities):
             for j in range(num_cities):
                 # pheromone trail smoothing (PTS) - can use for any variation
                 # delta = 0 ==> no PTS, delta = 1 ==> resetting edges to tau_max
                 tau[i][j] = tau[i][j] + delta * (tau_max - tau[i][j])
-        # break # terminate when stagnation reached
+        last_pts = t
+    if t - last_best_update > 150: # TODO delete this line
+        break # terminate when stagnation reached
 
 added_note += "\nFirst best tour update at t = " + str(first_best_update) + ".\n"
 added_note += "Last best tour update at t = " + str(last_best_update) + ".\n"
