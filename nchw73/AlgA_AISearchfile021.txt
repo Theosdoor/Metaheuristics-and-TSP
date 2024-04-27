@@ -1,12 +1,12 @@
 USER = nchw73 (Theo Farrell),
 ALGORITHM CODE = GA, NAME OF CITY-FILE = AISearchfile021.txt,
-SIZE = 21, TOUR LENGTH = 2606,
-3,13,11,19,2,18,16,9,12,10,17,4,20,1,6,0,8,14,5,15,7,
-NOTE = Time limit = 60 seconds.
-p_mutation = 0.3.
-First best tour update at it = 1.
-Last best tour update at it = 1567.
+SIZE = 21, TOUR LENGTH = 2574,
+10,17,0,6,1,20,4,18,16,9,12,15,5,14,8,7,3,13,11,19,2,
+NOTE = Time limit = 180 seconds.
+Starting p_mutation = 0.2.
+First best tour update at it = 2.
+Last best tour update at it = 3954.
 
-The parameter values are 'max_it' = 20000 and 'pop_size' = 420.
-RUN-TIME = 60.0 seconds.
-CERTIFICATE = 852.
+The parameter values are 'max_it' = 9999999999 and 'pop_size' = 250.
+RUN-TIME = 180.0 seconds.
+CERTIFICATE = 848.

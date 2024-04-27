@@ -561,16 +561,24 @@ for t in range(max_it): # repeat for max_it iterations starting at t := 0
         tour_length = depositing_ants[i].tour_length
 
         # for each city j deposit pheremone on edge to next city in tour
+        # NOTE only deposit in direction i --> j not j --> i
+        # to avoid assuming euclidean distance
+        # since i --> j is not necessarily same edge as j --> i in non-euclidean
         for j in range(num_cities - 1):
             if variation == 'AS_rank':
                 tau[tour[j]][tour[j + 1]] += (w - i - 1) * (1 / tour_length)
+                tau[tour[j + 1]][tour[j]] += (w - i - 1) * (1 / tour_length) # deposit in both directions TODO
             else:
                 tau[tour[j]][tour[j + 1]] += 1 / tour_length
+                tau[tour[j + 1]][tour[j]] += 1 / tour_length # TODO
+
         # add pheremone on edge from last city back to start
         if variation == 'AS_rank':
             tau[tour[num_cities - 1]][tour[0]] += (w - i - 1) * (1 / tour_length)
+            tau[tour[0]][tour[num_cities - 1]] += (w - i - 1) * (1 / tour_length) # TODO
         else:
             tau[tour[num_cities - 1]][tour[0]] += 1 / tour_length
+            tau[tour[0]][tour[num_cities - 1]] += 1 / tour_length # TODO
 
     # EAS - reinforce edges in best tour found so far
     # AS_rank - best tour given top weighting

@@ -357,7 +357,7 @@ added_note = ""
 
 # Genetic algorithm ENHANCED
 timed = True
-time_limit = 59 # seconds
+time_limit = 59.3 # seconds
 if timed:
     added_note += "Time limit = " + str(time_limit) + " seconds.\n"
 

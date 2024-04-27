@@ -510,7 +510,8 @@ def crossover(X, Y):
                 Z2[split + i] = replace_with.pop(0)
 
     # return fittest child
-    if get_tour_length(Z1) < get_tour_length(Z2):
+    child_f_mins, _ = get_f_mins([Z1, Z2])
+    if child_f_mins[0] > child_f_mins[1]:
         return Z1
     else:
         return Z2
