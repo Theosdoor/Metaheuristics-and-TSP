@@ -360,7 +360,7 @@ timed = True
 time_limit = 59 # seconds
 if timed:
     added_note += "Time limit = " + str(time_limit) + " seconds.\n"
-variation = 'MMAS' # AS_rank, MMAS (MAX-MIN Ant System)
+variation = 'MMAS' # AS_rank or MMAS (MAX-MIN Ant System)
 # MMAS gives just as good results as AS_rank, but MMAS converges faster
 # due to 2-opt, tau max/min limits, and faster due to candidate list
 added_note += variation + ' ACO algorithm\n'
@@ -772,11 +772,15 @@ for t in range(max_it): # repeat for max_it iterations starting at t := 0
             source_length = iter_best_length
 
     # MMAS AS - deposit on all edges of source tour
+    # NOTE adds pher on edge j --> j+1 and j+1 --> j
+    # so that ant on j+1 can smell pher on edge too.
     if variation == 'MMAS':
         for j in range(num_cities - 1):
             tau[source_tour[j]][source_tour[j + 1]] += (1 / source_length)
+            tau[source_tour[j + 1]][source_tour[j]] += (1 / source_length)
         # deposit on edge back to start city
         tau[source_tour[num_cities - 1]][source_tour[0]] += (1 / source_length)
+        tau[source_tour[0]][source_tour[num_cities - 1]] += (1 / source_length)
 
     # AS_rank - only deposit on w-1 shortest tours and globally best
     if variation == 'AS_rank':
@@ -787,8 +791,6 @@ for t in range(max_it): # repeat for max_it iterations starting at t := 0
             tour_length = depositing_ants[i].tour_length
 
             # for each city j deposit pheremone on edge to next city in tour
-            # NOTE adds pher on edge j --> j+1 and j+1 --> j
-            # so that ant on j+1 can smell pher on edge too.
             for j in range(num_cities - 1):
                 tau[tour[j]][tour[j + 1]] += (w - i - 1) * (1 / tour_length)
                 tau[tour[j + 1]][tour[j]] += (w - i - 1) * (1 / tour_length)
@@ -799,7 +801,9 @@ for t in range(max_it): # repeat for max_it iterations starting at t := 0
         # AS_rank - global best tour given top weighting
         for j in range(num_cities - 1):
             tau[global_best[j]][global_best[j + 1]] += w * (1 / global_best_length)
+            tau[global_best[j + 1]][global_best[j]] += w * (1 / global_best_length)
         tau[global_best[num_cities - 1]][global_best[0]] += w * (1 / global_best_length)
+        tau[global_best[0]][global_best[num_cities - 1]] += w * (1 / global_best_length)
 
     for i in range(num_cities):
         for j in range(num_cities):

@@ -581,11 +581,12 @@ for t in range(max_it): # repeat for max_it iterations starting at t := 0
 
     # EAS - reinforce edges in best tour found so far
     # AS_rank - best tour given top weighting
-    # NOTE only deposits in direction of best tour
     if (variation == 'EAS' or variation == 'AS_rank'):
         for j in range(num_cities - 1):
             tau[best_tour[j]][best_tour[j + 1]] += w * (1 / best_tour_length)
+            tau[best_tour[j + 1]][best_tour[j]] += w * (1 / best_tour_length)
         tau[best_tour[num_cities - 1]][best_tour[0]] += w * (1 / best_tour_length)
+        tau[best_tour[0]][best_tour[num_cities - 1]] += w * (1 / best_tour_length)
     
     # break if time limit reached
     if timed and (time.time() - start_time > time_limit):
