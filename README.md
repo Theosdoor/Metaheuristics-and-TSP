@@ -2,6 +2,15 @@
 
 This project implements and compares several metaheuristic algorithms for solving the Traveling Salesperson Problem (TSP). The implementations include both basic and enhanced versions of Genetic Algorithms (GA) and Ant Colony Optimization (ACO) algorithms.
 
+- **Grade:** 1st Class (83%)
+- **Notable Rankings:** Best tour in the class on 9 occasions.
+
+**Instructor Feedback**
+> "Both your basic implementations are correct so you get a correctness mark of 4/4. You implemented a demanding algorithm and your sophistication mark is 9/10. I looked for improvements of at least 400 for the small unseen city file and 240 for the larger one. Your improvements were such as to yield a mark of 1/2 for enhanced tour quality. Your enhancements in GA-enhanced.py are reasonable and worth 1.5/3 enhancement marks. Your enhancements in ACO-enhanced.py are reasonable and worth 1.5/3 enhancement marks. Your overall tour quality mark is 7.76/8 and you got the best tour in the class on 9 occasions. (The total number of marks available was 30.)"
+— Prof. Iain Stewart, Durham University
+
+**Contribution Note** - I wrote the Genetic Algorithm and Ant Colony Optimization implementations. The remaining framework code for file I/O, distance matrix creation, and tour output formatting was provided by the instructor.
+
 ## Overview
 
 The TSP is a classic optimization problem where the goal is to find the shortest possible route that visits each city exactly once and returns to the starting city. This project explores four different algorithmic approaches, each with distinct strategies for exploration and exploitation of the solution space.
@@ -100,6 +109,4 @@ The script will automatically handle loading the data, running the specified alg
 └── README.md             # This file
 ```
 
-## Note on Contribution
 
-This project was originally coursework. I wrote the Genetic Algorithm and Ant Colony Optimization implementations. The remaining framework code for file I/O, distance matrix creation, and tour output formatting was provided by the instructor.

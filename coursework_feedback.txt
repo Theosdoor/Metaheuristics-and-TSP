@@ -1,0 +1,74 @@
+Master feedback for user-ID nchw73 at May  4 12:34:12
+
+Throughout this validation, as many error messages as possible are returned in order to help you understand what might have gone wrong. However, note that sometimes a single error might lead to early termination of the validation process so that fixing this error results in more, as yet unseen, errors. So, the list of error messages might not be exhaustive but it's the best I can do!
+
+The first part of this feedback is validation of the program files that you submitted, in terms of the key information they need to contain. At this stage, the programs are not executed; that will follow later. Please note that for any program cluster, if any of the following are true then the program cluster is INVALID and neither it nor the tours it produces will secure any marks:
+ - the basic program does not exist
+ - the basic program exists but its user-name mis-matches the definitive user-name
+ - the basic program exists but its algorithm code is illegal
+ - the basic program exists but it imports an illegal module
+ - the enhanced program exists but its user-name mismatches the definitive user-name
+ - the enhanced program exists but its algorithm code mis-matches with that of the basic program
+ - the enhanced program exists but it imports an illegal module.
+Also, if you have two valid program clusters but they have the same algorithm code then both clusters are invalid. (Of course, invalidity can be avoided if you check your programs using this program prior to submission!)
+
+By the way, if you don't bother to validate prior to submission and so don't include the validation feedback in your submission then I will do absolutely nothing to fix any errors in your submission, no matter how trivial they are.
+
+#####  Program submission
+#####   * program cluster AlgA:
+#####      - AlgAbasic.py: successful validation (genetic algorithm, tariff 6)
+#####      - AlgAenhanced.py: successful validation (genetic algorithm, tariff 6)
+#####   * program cluster AlgB:
+#####      - AlgBbasic.py: successful validation (ant colony optimization, tariff 9)
+#####      - AlgBenhanced.py: successful validation (ant colony optimization, tariff 9)
+
+The next part of this feedback is validation of the tour files that you submitted. Each has been validated and the outcome is described below. If any tour has an associated error message then it is deemed to be invalid and it will secure no marks. Remember: as stated above, any tours arising from an invalid program cluster will not secure any marks (irrespective of whether they are actually legal tours or not). The tour lengths of successfully validated tours given below go to form your tour-quality mark.
+
+#####  Tour file submission
+#####   * program cluster AlgA:
+#####      - AlgA_AISearchfile012.txt: valid tour of length 56 (genetic algorithm, run-time 3.6 seconds)
+#####      - AlgA_AISearchfile017.txt: valid tour of length 1444 (genetic algorithm, run-time 59.6 seconds)
+#####      - AlgA_AISearchfile021.txt: valid tour of length 2574 (genetic algorithm, run-time 180.0 seconds)
+#####      - AlgA_AISearchfile026.txt: valid tour of length 1511 (genetic algorithm, run-time 60.0 seconds)
+#####      - AlgA_AISearchfile042.txt: valid tour of length 1273 (genetic algorithm, run-time 87.8 seconds)
+#####      - AlgA_AISearchfile048.txt: valid tour of length 13300 (genetic algorithm, run-time 300.1 seconds)
+#####      - AlgA_AISearchfile058.txt: valid tour of length 26799 (genetic algorithm, run-time 59.0 seconds)
+#####      - AlgA_AISearchfile175.txt: valid tour of length 21733 (genetic algorithm, run-time 300.2 seconds)
+#####      - AlgA_AISearchfile180.txt: valid tour of length 1950 (genetic algorithm, run-time 188.4 seconds)
+#####      - AlgA_AISearchfile535.txt: valid tour of length 49755 (genetic algorithm, run-time 60.0 seconds)
+#####   * program cluster AlgB:
+#####      - AlgB_AISearchfile012.txt: valid tour of length 56 (ant colony optimization, run-time 0.2 seconds)
+#####      - AlgB_AISearchfile017.txt: valid tour of length 1444 (ant colony optimization, run-time 13.3 seconds)
+#####      - AlgB_AISearchfile021.txt: valid tour of length 2549 (ant colony optimization, run-time 19.6 seconds)
+#####      - AlgB_AISearchfile026.txt: valid tour of length 1473 (ant colony optimization, run-time 10.6 seconds)
+#####      - AlgB_AISearchfile042.txt: valid tour of length 1187 (ant colony optimization, run-time 24.4 seconds)
+#####      - AlgB_AISearchfile048.txt: valid tour of length 12150 (ant colony optimization, run-time 300.0 seconds)
+#####      - AlgB_AISearchfile058.txt: valid tour of length 25395 (ant colony optimization, run-time 28.2 seconds)
+#####      - AlgB_AISearchfile175.txt: valid tour of length 21407 (ant colony optimization, run-time 60.6 seconds)
+#####      - AlgB_AISearchfile180.txt: valid tour of length 1950 (ant colony optimization, run-time 5585.4 seconds)
+#####      - AlgB_AISearchfile535.txt: valid tour of length 48512 (ant colony optimization, run-time 15160.5 seconds)
+
+The next part of this feedback states whether the proforma and the validation feedback were submitted.
+
+#####  Additional items submission
+#####   * AISearchProforma.pdf: submitted
+#####   * AISearchValidationFeedback.txt: submitted
+
+The next part of this feedback is concerned with the correctness of the submitted programs. Recall that correctness is determined by the successful execution of a program on unseen city files. As above, if a program cluster is invalid then the programs in the cluster are deemed not to have terminated on the unseen city files (irrespective of whether they actually did or didn't) and they will not secure any correctness or enhanced quality marks.
+
+#####  Basic and enhanced correctness
+#####   * program cluster AlgA:
+#####      - AlgAbasic.py on Hiddenfile048.txt: a good tour of length 6345 (genetic algorithm, run-time 59.5 seconds)
+#####      - AlgAbasic.py on Hiddenfile090.txt: a good tour of length 4025 (genetic algorithm, run-time 59.5 seconds)
+#####      - AlgAenhanced.py on Hiddenfile048.txt: a good tour of length 5662 (genetic algorithm, run-time 59.3 seconds)
+#####      - AlgAenhanced.py on Hiddenfile090.txt: a good tour of length 2759 (genetic algorithm, run-time 59.4 seconds)
+#####   * program cluster AlgB:
+#####      - AlgBbasic.py on Hiddenfile048.txt: a good tour of length 5368 (ant colony optimization, run-time 58.6 seconds)
+#####      - AlgBbasic.py on Hiddenfile090.txt: a good tour of length 2598 (ant colony optimization, run-time 58.5 seconds)
+#####      - AlgBenhanced.py on Hiddenfile048.txt: a good tour of length 5046 (ant colony optimization, run-time 59.1 seconds)
+#####      - AlgBenhanced.py on Hiddenfile090.txt: a good tour of length 2460 (ant colony optimization, run-time 59.3 seconds)
+
+Feedback: Both your basic implementations are correct so you get a correctness mark of 4/4. You implemented a demanding algorithm and your sophistication mark is 9/10. I looked for improvements of at least 400 for the small unseen city file and 240 for the larger one. Your improvements were such as to yield a mark of 1/2 for enhanced tour quality. Your enhancements in AlgAenhanced.py are reasonable and worth 1.5/3 enhancement marks. Your enhancements in AlgBenhanced.py are reasonable and worth 1.5/3 enhancement marks. Your overall tour quality mark is 7.76/8 and you got the best tour in the class on 9 occasions. (The total number of marks available was 30.) 
+
+Your codes and tours are very good overall and your assignment mark is 83%.
+
