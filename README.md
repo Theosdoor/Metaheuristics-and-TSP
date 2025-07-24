@@ -105,7 +105,6 @@ The script will automatically handle loading the data, running the specified alg
 │   └── utils.py          # Helper functions for data processing
 ├── city-files/           # TSP problem instances (12-535 cities)
 ├── best-tours/           # Generated solution files
-├── Proforma.md           # Detailed implementation notes
 └── README.md             # This file
 ```
 
