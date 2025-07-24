@@ -104,7 +104,7 @@ The script will automatically handle loading the data, running the specified alg
 │   └── ACO-enhanced.py   # Enhanced ACO module
 │   └── utils.py          # Helper functions for data processing
 ├── city-files/           # TSP problem instances (12-535 cities)
-├── best-tours/           # Generated solution files
+├── tours/           # Generated solution files
 └── README.md             # This file
 ```
 
