@@ -8,7 +8,7 @@ The TSP is a classic optimization problem where the goal is to find the shortest
 
 ## Algorithms Implemented
 
-The core logic for each algorithm is contained in the `search-algs` directory. The boilerplate code for file parsing and setup was provided as part of the original coursework and has been extracted into `search-algs/utils.py`.
+The core logic for each algorithm is contained in the `src` directory. The boilerplate code for file parsing and setup was provided as part of the original coursework and has been extracted into `src/utils.py`.
 
 ### Genetic Algorithm (GA)
 - **`GA-basic.py`**: Standard genetic algorithm with:
@@ -38,11 +38,11 @@ The core logic for each algorithm is contained in the `search-algs` directory. T
 
 ## How to Run
 
-To run an algorithm, navigate to the `search-algs` directory and use the `main.py` script. You must provide the algorithm module and the city file.
+To run an algorithm, navigate to the `src` directory and use the `main.py` script. You must provide the algorithm module and the city file.
 
-1.  Navigate to the `search-algs` directory:
+1.  Navigate to the `src` directory:
     ```bash
-    cd search-algs
+    cd src
     ```
 2.  Execute `main.py` with the desired algorithm and city file:
     ```bash
@@ -68,7 +68,7 @@ The script will automatically handle loading the data, running the specified alg
 ## File Structure
 
 ```
-├── search-algs/          # Algorithm implementations
+├── src/                  # Algorithm implementations
 │   ├── main.py           # Central runner for all algorithms
 │   ├── GA-basic.py       # Basic genetic algorithm module
 │   ├── GA-enhanced.py    # Enhanced GA module
