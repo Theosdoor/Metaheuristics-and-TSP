@@ -1,0 +1,11 @@
+USER = nchw73
+ALGORITHM_CODE = AC
+COST = 56
+TOUR = 11,6,1,5,4,3,9,2,8,7,0,10
+NOTE = MMAS ACO algorithm
+alpha = 1, beta = 2, rho = 0.6, w = 6
+First best tour update at t = 0.
+Last best tour update at t = 0.
+
+The parameter values are 'max_it' = 600 and 'num_ants' = 12.
+Running time: 0.68 seconds.

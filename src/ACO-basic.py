@@ -1,5 +1,6 @@
 import random
 import time
+from tqdm import tqdm
 
 algorithm_code = "AC"
 
@@ -147,102 +148,106 @@ def run(num_cities, dist_matrix, time_limit=None):
     # ants = [Ant(i) for i in range(num_ants)] # specifically on each city (up to num_ants)
 
     # MAIN LOOP
-    for t in range(max_it): # repeat for max_it iterations starting at t := 0
-        # for each ant
-        for ant_k in ants:
-            # reset ant tour to start city if necessary
-            if t > 0:
-                ant_k.reset()
+    with tqdm(total=max_it, desc=f"ACO Basic ({variation})", unit="iter") as pbar:
+        for t in range(max_it): # repeat for max_it iterations starting at t := 0
+            # for each ant
+            for ant_k in ants:
+                # reset ant tour to start city if necessary
+                if t > 0:
+                    ant_k.reset()
 
-            # stochastically build a trail
-            while len(ant_k.tour) < num_cities:
-                # get current & unvisited cities
-                current_city = ant_k.tour[-1]
-                unvisited_cities = ant_k.unvisited
+                # stochastically build a trail
+                while len(ant_k.tour) < num_cities:
+                    # get current & unvisited cities
+                    current_city = ant_k.tour[-1]
+                    unvisited_cities = ant_k.unvisited
 
-                # get probabilities for each unvisited city
-                probs = [0] * num_cities
+                    # get probabilities for each unvisited city
+                    probs = [0] * num_cities
 
-                # calculate denominator first (same for each city)
-                denominator = 0
-                for m in unvisited_cities:
-                    denominator += (tau[current_city][m] ** alpha) * (eta(current_city, m) ** beta)
+                    # calculate denominator first (same for each city)
+                    denominator = 0
+                    for m in unvisited_cities:
+                        denominator += (tau[current_city][m] ** alpha) * (eta(current_city, m) ** beta)
+                        
+                    # calculate numerator and probability of visiting each city
+                    for j in unvisited_cities:
+                        numerator = (tau[current_city][j] ** alpha) * (eta(current_city, j) ** beta)
+                        probs[j] = numerator / denominator
                     
-                # calculate numerator and probability of visiting each city
-                for j in unvisited_cities:
-                    numerator = (tau[current_city][j] ** alpha) * (eta(current_city, j) ** beta)
-                    probs[j] = numerator / denominator
-                
-                # choose next city from probabilities
-                next_city = random.choices(list(range(num_cities)), weights=probs)[0]
-                ant_k.visit_city(next_city)
+                    # choose next city from probabilities
+                    next_city = random.choices(list(range(num_cities)), weights=probs)[0]
+                    ant_k.visit_city(next_city)
 
-            # evaluate & store ant tour length
-            ant_k.tour_length = get_tour_length(ant_k.tour)
+                # evaluate & store ant tour length
+                ant_k.tour_length = get_tour_length(ant_k.tour)
 
-        # sort list of ants by tour length
-        ants = sorted(ants, key=lambda ant: ant.tour_length)
+            # sort list of ants by tour length
+            ants = sorted(ants, key=lambda ant: ant.tour_length)
 
-        # update best if improved tour found
-        if ants[0].tour_length < best_tour_length:
-            best_tour_length = ants[0].tour_length
-            best_tour = ants[0].tour
+            # update best if improved tour found
+            if ants[0].tour_length < best_tour_length:
+                best_tour_length = ants[0].tour_length
+                best_tour = ants[0].tour
 
-            # keep track of iterations where best is updated
-            last_best_update = t
-            if first_best_update == 0:
-                first_best_update = t
-            # print("BEST LENGTH:", best_tour_length)
+                # keep track of iterations where best is updated
+                last_best_update = t
+                if first_best_update == 0:
+                    first_best_update = t
+                # print("BEST LENGTH:", best_tour_length)
+                pbar.set_postfix(best_length=f'{best_tour_length:.2f}')
 
-        ## update pheremone matrix
+            ## update pheremone matrix
 
-        # evaporate on all edges
-        for i in range(num_cities):
-            for j in range(num_cities):
-                tau[i][j] *= (1 - rho)
+            # evaporate on all edges
+            for i in range(num_cities):
+                for j in range(num_cities):
+                    tau[i][j] *= (1 - rho)
 
-        # AS/EAS - for each ant, deposit on all edges in tour
-        # AS_rank - only deposit on w-1 shortest tours
-        if variation == 'AS_rank':
-            depositing_ants = ants[:w-1]
-        else:
-            depositing_ants = ants
-
-        for i in range(len(depositing_ants)):
-            tour = depositing_ants[i].tour
-            tour_length = depositing_ants[i].tour_length
-
-            # for each city j deposit pheremone on edge to next city in tour
-            # NOTE adds pher on edge j --> j+1 and j+1 --> j
-            # so that ant on j+1 can smell pher on edge too.
-            for j in range(num_cities - 1):
-                if variation == 'AS_rank':
-                    tau[tour[j]][tour[j + 1]] += (w - i - 1) * (1 / tour_length)
-                    tau[tour[j + 1]][tour[j]] += (w - i - 1) * (1 / tour_length) # deposit in both directions
-                else:
-                    tau[tour[j]][tour[j + 1]] += 1 / tour_length
-                    tau[tour[j + 1]][tour[j]] += 1 / tour_length
-
-            # add pheremone on edge from last city back to start
+            # AS/EAS - for each ant, deposit on all edges in tour
+            # AS_rank - only deposit on w-1 shortest tours
             if variation == 'AS_rank':
-                tau[tour[num_cities - 1]][tour[0]] += (w - i - 1) * (1 / tour_length)
-                tau[tour[0]][tour[num_cities - 1]] += (w - i - 1) * (1 / tour_length)
+                depositing_ants = ants[:w-1]
             else:
-                tau[tour[num_cities - 1]][tour[0]] += 1 / tour_length
-                tau[tour[0]][tour[num_cities - 1]] += 1 / tour_length
+                depositing_ants = ants
 
-        # EAS - reinforce edges in best tour found so far
-        # AS_rank - best tour given top weighting
-        if (variation == 'EAS' or variation == 'AS_rank'):
-            for j in range(num_cities - 1):
-                tau[best_tour[j]][best_tour[j + 1]] += w * (1 / best_tour_length)
-                tau[best_tour[j + 1]][best_tour[j]] += w * (1 / best_tour_length)
-            tau[best_tour[num_cities - 1]][best_tour[0]] += w * (1 / best_tour_length)
-            tau[best_tour[0]][best_tour[num_cities - 1]] += w * (1 / best_tour_length)
-        
-        # break if time limit reached
-        if timed and (time.time() - start_time > time_limit):
-            break
+            for i in range(len(depositing_ants)):
+                tour = depositing_ants[i].tour
+                tour_length = depositing_ants[i].tour_length
+
+                # for each city j deposit pheremone on edge to next city in tour
+                # NOTE adds pher on edge j --> j+1 and j+1 --> j
+                # so that ant on j+1 can smell pher on edge too.
+                for j in range(num_cities - 1):
+                    if variation == 'AS_rank':
+                        tau[tour[j]][tour[j + 1]] += (w - i - 1) * (1 / tour_length)
+                        tau[tour[j + 1]][tour[j]] += (w - i - 1) * (1 / tour_length) # deposit in both directions
+                    else:
+                        tau[tour[j]][tour[j + 1]] += 1 / tour_length
+                        tau[tour[j + 1]][tour[j]] += 1 / tour_length
+
+                # add pheremone on edge from last city back to start
+                if variation == 'AS_rank':
+                    tau[tour[num_cities - 1]][tour[0]] += (w - i - 1) * (1 / tour_length)
+                    tau[tour[0]][tour[num_cities - 1]] += (w - i - 1) * (1 / tour_length)
+                else:
+                    tau[tour[num_cities - 1]][tour[0]] += 1 / tour_length
+                    tau[tour[0]][tour[num_cities - 1]] += 1 / tour_length
+
+            # EAS - reinforce edges in best tour found so far
+            # AS_rank - best tour given top weighting
+            if (variation == 'EAS' or variation == 'AS_rank'):
+                for j in range(num_cities - 1):
+                    tau[best_tour[j]][best_tour[j + 1]] += w * (1 / best_tour_length)
+                    tau[best_tour[j + 1]][best_tour[j]] += w * (1 / best_tour_length)
+                tau[best_tour[num_cities - 1]][best_tour[0]] += w * (1 / best_tour_length)
+                tau[best_tour[0]][best_tour[num_cities - 1]] += w * (1 / best_tour_length)
+            
+            # break if time limit reached
+            if timed and (time.time() - start_time > time_limit):
+                break
+            
+            pbar.update(1)
 
     added_note += "\nFirst best tour update at t = " + str(first_best_update) + ".\n"
     added_note += "Last best tour update at t = " + str(last_best_update) + ".\n"

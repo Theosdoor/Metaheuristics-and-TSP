@@ -1,5 +1,6 @@
 import random
 import time
+from tqdm import tqdm
 
 algorithm_code = "GA"
 
@@ -244,95 +245,99 @@ def run(num_cities, dist_matrix, time_limit=None):
     # certain number of iterations done or
     # some individual is fit enough or
     # time limit reached
-    for it in range(max_it):
-        new_P = []
+    with tqdm(total=max_it, desc="GA Enhanced", unit="iter") as pbar:
+        for it in range(max_it):
+            new_P = []
 
-        # get probabilities for parent selection
-        F = sum(f_mins) # total fitness
-        probs = [f/F for f in f_mins] # probability of selection proportional to fitness
+            # get probabilities for parent selection
+            F = sum(f_mins) # total fitness
+            probs = [f/F for f in f_mins] # probability of selection proportional to fitness
 
-        for i in range(pop_size):
-            # randomly choose two parents from P with
-            # probability proportional to fitness
-            # (X may = Y)
-            X = roulette_wheel(P, probs)
-            Y = roulette_wheel(P, probs)
+            for i in range(pop_size):
+                # randomly choose two parents from P with
+                # probability proportional to fitness
+                # (X may = Y)
+                X = roulette_wheel(P, probs)
+                Y = roulette_wheel(P, probs)
 
-            # crossover X, Y
-            Z1 = crossover(X, Y)
+                # crossover X, Y
+                Z1 = crossover(X, Y)
 
-            # with small fixed probablity mutate Z1
-            if random.random() <= p_mutation:
-              mutate(Z1)
-            # if random.random() <= p_mutation:
-            #   mutate(Z2)
+                # with small fixed probablity mutate Z1
+                if random.random() <= p_mutation:
+                  mutate(Z1)
+                # if random.random() <= p_mutation:
+                #   mutate(Z2)
 
-            new_P.append(Z1)
-            # new_P.append(Z2)
+                new_P.append(Z1)
+                # new_P.append(Z2)
 
-        # update P & f_mins
-        P = new_P
-        f_mins, tau = get_f_mins(P, tau)
+            # update P & f_mins
+            P = new_P
+            f_mins, tau = get_f_mins(P, tau)
 
-        # if tau different from that used to calulate best_fitness, recalculate f_min(best)
-        if tau != best_tour_tau:
-            best_fitness = tau - get_tour_length(best_tour)
-            best_tour_tau = tau
+            # if tau different from that used to calulate best_fitness, recalculate f_min(best)
+            if tau != best_tour_tau:
+                best_fitness = tau - get_tour_length(best_tour)
+                best_tour_tau = tau
 
-        # update best with fitter individual
-        temp_best_fitness = max(f_mins)
-        # print("temp best tour length:", tau - temp_best_fitness)
-        if temp_best_fitness > best_fitness:
-            best_fitness = temp_best_fitness
-            best_tour = P[f_mins.index(best_fitness)] # keep best individual in memory
+            # update best with fitter individual
+            temp_best_fitness = max(f_mins)
+            # print("temp best tour length:", tau - temp_best_fitness)
+            if temp_best_fitness > best_fitness:
+                best_fitness = temp_best_fitness
+                best_tour = P[f_mins.index(best_fitness)] # keep best individual in memory
+                pbar.set_postfix(best_length=f'{(best_tour_tau - best_fitness):.2f}', p_mutation=f'{p_mutation:.2f}')
 
-            # keep track of iterations where best is updated
-            last_best_update = it
-            if first_best_update == 0:
-                first_best_update = it
+                # keep track of iterations where best is updated
+                last_best_update = it
+                if first_best_update == 0:
+                    first_best_update = it
 
-            # break if fit enough
-            sat_fitness = tau - sat_tour_length
-            if best_fitness >= sat_fitness:
-                break
+                # break if fit enough
+                sat_fitness = tau - sat_tour_length
+                if best_fitness >= sat_fitness:
+                    break
 
-        # check if P homogeneous
-        f_min_counts = {} # dict to keep count of how often each f_min occurs
-        for f in f_mins:
-            if f in f_min_counts:
-                # increase count
-                f_min_counts[f] += 1
+            # check if P homogeneous
+            f_min_counts = {} # dict to keep count of how often each f_min occurs
+            for f in f_mins:
+                if f in f_min_counts:
+                    # increase count
+                    f_min_counts[f] += 1
+                else:
+                    # add to dict, count = 1
+                    f_min_counts[f] = 1
+            max_count = max(f_min_counts.values()) # how often the mode of f_mins occurs
+
+            if max_count >= hom_thresh:
+                homogeneous = True
             else:
-                # add to dict, count = 1
-                f_min_counts[f] = 1
-        max_count = max(f_min_counts.values()) # how often the mode of f_mins occurs
+                homogeneous = False
 
-        if max_count >= hom_thresh:
-            homogeneous = True
-        else:
-            homogeneous = False
+            # update p_mutation if GA stagnates or P sufficiently homogeneous
+            it_since_last_best = it - last_best_update # iterations since last update to best tour
+            # increase to next p_mutation [p2, p3, ..]
+            if (it_since_last_best > p2_thresh or homogeneous) and p_mutation < p2:
+                # print("Increasing p_mutation to", p2, "...")
+                p_mutation = p2
+            elif (it_since_last_best > p3_thresh) and p_mutation < p3:
+                # print("Increasing p_mutation to", p3, "...")
+                p_mutation = p3
+            elif (it_since_last_best > p4_thresh) and p_mutation < p4:
+                # print("Increasing p_mutation to", p4, "...")
+                p_mutation = p4
+            else:
+                # reduce p_mutation if rate of improvement increases and P sufficiently diverse
+                if p_mutation > p1 and (it_since_last_best < p2_thresh) and not homogeneous:
+                    # print("Reducing p_mutation...")
+                    p_mutation = p1
 
-        # update p_mutation if GA stagnates or P sufficiently homogeneous
-        it_since_last_best = it - last_best_update # iterations since last update to best tour
-        # increase to next p_mutation [p2, p3, ..]
-        if (it_since_last_best > p2_thresh or homogeneous) and p_mutation < p2:
-            # print("Increasing p_mutation to", p2, "...")
-            p_mutation = p2
-        elif (it_since_last_best > p3_thresh) and p_mutation < p3:
-            # print("Increasing p_mutation to", p3, "...")
-            p_mutation = p3
-        elif (it_since_last_best > p4_thresh) and p_mutation < p4:
-            # print("Increasing p_mutation to", p4, "...")
-            p_mutation = p4
-        else:
-            # reduce p_mutation if rate of improvement increases and P sufficiently diverse
-            if p_mutation > p1 and (it_since_last_best < p2_thresh) and not homogeneous:
-                # print("Reducing p_mutation...")
-                p_mutation = p1
-
-        # break if time limit reached
-        if timed and (time.time() - start_time > time_limit):
-            break
+            # break if time limit reached
+            if timed and (time.time() - start_time > time_limit):
+                break
+            
+            pbar.update(1)
 
     added_note += "First best tour update at it = " + str(first_best_update) + ".\n"
     added_note += "Last best tour update at it = " + str(last_best_update) + ".\n"

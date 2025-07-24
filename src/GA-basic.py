@@ -1,5 +1,6 @@
 import random
 import time
+from tqdm import tqdm
 
 algorithm_code = "GA"
 
@@ -199,58 +200,62 @@ def run(num_cities, dist_matrix, time_limit=None):
     # certain number of iterations done or
     # some individual is fit enough or
     # time limit reached
-    for it in range(max_it):
-        new_P = []
+    with tqdm(total=max_it, desc="GA Basic", unit="iter") as pbar:
+        for it in range(max_it):
+            new_P = []
 
-        # get probabilities for parent selection
-        F = sum(f_mins) # total fitness
-        probs = [f/F for f in f_mins] # probability of selection proportional to fitness
+            # get probabilities for parent selection
+            F = sum(f_mins) # total fitness
+            probs = [f/F for f in f_mins] # probability of selection proportional to fitness
 
-        for i in range(pop_size):
-            # randomly choose two parents from P with 
-            # probability proportional to fitness
-            # NOTE X may = Y
-            X = roulette_wheel(P, probs)
-            Y = roulette_wheel(P, probs)
+            for i in range(pop_size):
+                # randomly choose two parents from P with 
+                # probability proportional to fitness
+                # NOTE X may = Y
+                X = roulette_wheel(P, probs)
+                Y = roulette_wheel(P, probs)
 
-            # crossover X and Y to produce Z
-            Z = crossover(X, Y)
+                # crossover X and Y to produce Z
+                Z = crossover(X, Y)
 
-            # with small fixed probablity mutate Z
-            k = random.random() # pick a random probability (i.e. int between 0 and 1)
-            if k <= p_mutation: 
-              mutate(Z)
+                # with small fixed probablity mutate Z
+                k = random.random() # pick a random probability (i.e. int between 0 and 1)
+                if k <= p_mutation: 
+                  mutate(Z)
+                
+                new_P.append(Z)
+
+            # update P & f_mins
+            P = new_P
+            f_mins, tau = get_f_mins(P, tau)
+
+            # if tau different from that used to calulate best_fitness, recalculate f_min(best)
+            if tau != best_tour_tau:
+                best_fitness = tau - get_tour_length(best_tour)
+                best_tour_tau = tau
+
+            # update best with fitter individual
+            temp_best_fitness = max(f_mins)
+            if temp_best_fitness > best_fitness:
+                best_fitness = temp_best_fitness
+                best_tour = P[f_mins.index(best_fitness)] # keep best individual in memory
+                pbar.set_postfix(best_length=f'{(best_tour_tau - best_fitness):.2f}')
+
+                # keep track of iterations where best is updated
+                last_best_update = it
+                if first_best_update == 0:
+                    first_best_update = it
+
+                # break if fit enough
+                sat_fitness = tau - sat_tour_length
+                if best_fitness >= sat_fitness:
+                    break
             
-            new_P.append(Z)
-
-        # update P & f_mins
-        P = new_P
-        f_mins, tau = get_f_mins(P, tau)
-
-        # if tau different from that used to calulate best_fitness, recalculate f_min(best)
-        if tau != best_tour_tau:
-            best_fitness = tau - get_tour_length(best_tour)
-            best_tour_tau = tau
-
-        # update best with fitter individual
-        temp_best_fitness = max(f_mins)
-        if temp_best_fitness > best_fitness:
-            best_fitness = temp_best_fitness
-            best_tour = P[f_mins.index(best_fitness)] # keep best individual in memory
-
-            # keep track of iterations where best is updated
-            last_best_update = it
-            if first_best_update == 0:
-                first_best_update = it
-
-            # break if fit enough
-            sat_fitness = tau - sat_tour_length
-            if best_fitness >= sat_fitness:
+            # break if time limit reached
+            if timed and (time.time() - start_time > time_limit):
                 break
-        
-        # break if time limit reached
-        if timed and (time.time() - start_time > time_limit):
-            break
+            
+            pbar.update(1)
 
     added_note += "First best tour update at it = " + str(first_best_update) + ".\n"
     added_note += "Last best tour update at it = " + str(last_best_update) + ".\n"
