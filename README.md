@@ -8,6 +8,8 @@ The TSP is a classic optimization problem where the goal is to find the shortest
 
 ## Algorithms Implemented
 
+The core logic for each algorithm is contained in the `search-algs` directory. The boilerplate code for file parsing and setup was provided as part of the original coursework and has been extracted into `search-algs/utils.py`.
+
 ### Genetic Algorithm (GA)
 - **`GA-basic.py`**: Standard genetic algorithm with:
   - Population size: 250
@@ -34,67 +36,51 @@ The TSP is a classic optimization problem where the goal is to find the shortest
   - 2-opt local search for tour improvement
   - Dynamic pheromone scheduling
 
-## Performance Features
+## How to Run
 
-- **Time Management**: All algorithms respect a ~59 second time limit
-- **Solution Quality Tracking**: Records first and last improvement iterations  
-- **Convergence Detection**: Early termination when satisfactory solutions found
-- **Benchmarking**: Uses nearest neighbor heuristic for initial solution quality assessment
+To run an algorithm, navigate to the `search-algs` directory and use the `main.py` script. You must provide the algorithm module and the city file.
+
+1.  Navigate to the `search-algs` directory:
+    ```bash
+    cd search-algs
+    ```
+2.  Execute `main.py` with the desired algorithm and city file:
+    ```bash
+    # Example: Run the enhanced Genetic Algorithm on a 12-city problem
+    python main.py GA-enhanced ../city-files/AISearchfile012.txt
+
+    # Example: Run the basic Ant Colony Optimization on a 100-city problem
+    python main.py ACO-basic ../city-files/AISearchfile100.txt
+    ```
+
+3.  **Optional Arguments:**
+    -   To set a time limit (in seconds), use the `--time_limit` flag:
+        ```bash
+        python main.py GA-enhanced ../city-files/AISearchfile535.txt --time_limit 60
+        ```
+    -   To specify a user name for the output file, use the `--user_name` flag:
+        ```bash
+        python main.py GA-enhanced ../city-files/AISearchfile012.txt --user_name MyUsername
+        ```
+
+The script will automatically handle loading the data, running the specified algorithm, and saving the resulting tour to the `best-tours` directory.
 
 ## File Structure
 
 ```
 ├── search-algs/          # Algorithm implementations
-│   ├── GA-basic.py       # Basic genetic algorithm
-│   ├── GA-enhanced.py    # Enhanced GA with SCX crossover & adaptive mutation
-│   ├── ACO-basic.py      # Basic ACO with multiple variant support
-│   └── ACO-enhanced.py   # Enhanced ACO with MMAS & local search
+│   ├── main.py           # Central runner for all algorithms
+│   ├── GA-basic.py       # Basic genetic algorithm module
+│   ├── GA-enhanced.py    # Enhanced GA module
+│   ├── ACO-basic.py      # Basic ACO module
+│   └── ACO-enhanced.py   # Enhanced ACO module
+│   └── utils.py          # Helper functions for data processing
 ├── city-files/           # TSP problem instances (12-535 cities)
 ├── best-tours/           # Generated solution files
-├── benchmark.py          # Performance testing suite
-├── analyze_results.py    # Visualization and analysis tools
-├── config.py            # Algorithm parameter configurations
-└── requirements.txt     # Python dependencies
+├── Proforma.md           # Detailed implementation notes
+└── README.md             # This file
 ```
-
-
-## Algorithm Details
-
-### Genetic Algorithm Enhancements
-The enhanced GA implements several advanced techniques:
-- **Sequential Constructive Crossover (SCX)**: Preserves good edge characteristics from both parents
-- **Adaptive Mutation**: Dynamically adjusts mutation rate (0.2→0.5) based on convergence patterns
-- **Smart Population Initialization**: 95% nearest neighbor tours + 5% random for diversity
-- **Convergence Monitoring**: Tracks population homogeneity and adaptation
-
-### ACO Algorithm Variants
-The ACO implementations support multiple algorithmic variants:
-- **Ant System (AS)**: Basic pheromone update mechanism
-- **Elitist Ant System (EAS)**: Emphasizes elite solutions
-- **Ant System with Ranking**: Weighted pheromone updates
-- **Max-Min Ant System (MMAS)**: Bounded pheromone values with local search
-
-## Performance Characteristics
-
-Based on testing across 11 instances (12-535 cities):
-- **GA-enhanced** typically finds highest quality solutions on larger instances
-- **ACO-enhanced** excels on medium-sized problems with local search integration
-- **Basic variants** provide reliable baseline performance with faster execution
-- All algorithms respect 59-second time constraints for fair comparison
-
-## Technical Implementation Notes
-
-### Key Algorithmic Features
-- **Time-bounded execution**: All algorithms implement proper time management
-- **Memory efficiency**: Distance matrices computed once and reused
-- **Solution validation**: Tours verified for completeness and optimality
-- **Reproducible results**: Configurable random seeds for testing
-
-### Code Architecture
-- **Separation of concerns**: Algorithm logic separate from I/O framework
-- **Extensible design**: Easy to add new metaheuristic variants
-- **Performance monitoring**: Built-in iteration and improvement tracking
 
 ## Note on Contribution
 
-**Note**: This project was originally coursework. My algorithm implementations begin at line 356 in each Python file. The framework code (lines 1-355) was provided by the instructor and handles file I/O, distance matrix creation, and tour output formatting.
+This project was originally coursework. I wrote the Genetic Algorithm and Ant Colony Optimization implementations. The surrounding framework code for file I/O, distance matrix creation, and tour output formatting was provided by the instructor.
