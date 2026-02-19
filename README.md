@@ -66,22 +66,18 @@ The core logic for each algorithm is contained in the `src` directory. The boile
 
 ## How to Run
 
-To run an algorithm, navigate to the `src` directory and use the `main.py` script. You must provide the algorithm module and the city file.
+To run an algorithm use the `main.py` script. You must provide the algorithm module and the city file.
 
-1.  Navigate to the `src` directory:
-    ```bash
-    cd src
-    ```
-2.  Execute `main.py` with the desired algorithm and city file:
+1.  Execute `main.py` with the desired algorithm and city file:
     ```bash
     # Example: Run the enhanced Genetic Algorithm on a 12-city problem
-    python main.py GA-enhanced ../city-files/AISearchfile012.txt
+    python main.py GA-enhanced city-files/AISearchfile012.txt
 
     # Example: Run the basic Ant Colony Optimization on a 100-city problem
-    python main.py ACO-basic ../city-files/AISearchfile100.txt
+    python main.py ACO-basic city-files/AISearchfile100.txt 
     ```
 
-3.  **Optional Arguments:**
+2.  **Optional Arguments:**
     -   To set a time limit (in seconds), use the `--time_limit` flag:
         ```bash
         python main.py GA-enhanced ../city-files/AISearchfile535.txt --time_limit 60
