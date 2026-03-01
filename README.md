@@ -46,7 +46,9 @@ The core logic for each algorithm is contained in the `src` directory. The boile
   - Dynamic pheromone scheduling
 
 
-## How to Run
+## Usage
+
+Run `uv sync` to create a .venv with required dependencies.
 
 To run an algorithm use the `main.py` script. You must provide the algorithm module and the city file.
 
