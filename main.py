@@ -89,6 +89,7 @@ def run_algorithm(module_name, input_file_name, time_limit=None):
 
     tour_file_name = f"tour{module_name}_{input_file_name[:-4]}_{datetime_stamp}.txt"
     try:
+        os.makedirs("tours", exist_ok=True)
         with open(os.path.join("tours", tour_file_name), 'w') as f:
             f.write(f"DATETIME = {datetime_readable}\n")
             f.write(f"ALGORITHM_CODE = {algorithm_code}\n")
